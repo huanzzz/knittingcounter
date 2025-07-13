@@ -1,11 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { Pattern } from '../types/Pattern';
+import { PatternStorage } from '../services/PatternStorage';
 
 type RootStackParamList = {
   Home: undefined;
-  PatternDetail: { patternId: string };
   AddPattern: undefined;
+  PatternDetail: { 
+    images: string[];
+    projectName: string;
+    needleSize: string;
+  };
+  EditPatternName: { 
+    images: string[];
+  };
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -14,16 +24,37 @@ type Props = {
   navigation: HomeScreenNavigationProp;
 };
 
-const patterns = [
-  { id: '1', name: '围巾图解', cover: 'https://via.placeholder.com/120x150?text=Cover1' },
-  { id: '2', name: '毛衣图解', cover: 'https://via.placeholder.com/120x150?text=Cover2' },
-  { id: '3', name: '帽子图解', cover: 'https://via.placeholder.com/120x150?text=Cover3' },
-  { id: '4', name: '手套图解', cover: 'https://via.placeholder.com/120x150?text=Cover4' },
-  { id: '5', name: '袜子图解', cover: 'https://via.placeholder.com/120x150?text=Cover5' },
-  { id: '6', name: '披肩图解', cover: 'https://via.placeholder.com/120x150?text=Cover6' },
-];
-
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
+  const [patterns, setPatterns] = useState<Pattern[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 每次页面获得焦点时重新加载数据
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPatterns();
+    }, [])
+  );
+
+  const loadPatterns = async () => {
+    try {
+      setLoading(true);
+      const data = await PatternStorage.getAll();
+      setPatterns(data);
+    } catch (error) {
+      console.error('Failed to load patterns:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#666" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -31,17 +62,38 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         keyExtractor={item => item.id}
         numColumns={2}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>还没有任何编织图解</Text>
+            <Text style={styles.emptySubText}>点击底部按钮添加新图解</Text>
+          </View>
+        )}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PatternDetail', { patternId: item.id })}>
-            <Image source={{ uri: item.cover }} style={styles.cover} />
+          <TouchableOpacity 
+            style={styles.card} 
+            onPress={() => navigation.navigate('PatternDetail', {
+              images: item.images,
+              projectName: item.projectName,
+              needleSize: item.needleSize
+            })}
+          >
+            <Image 
+              source={{ uri: item.images[0] }} 
+              style={styles.cover}
+            />
             <Text style={styles.cardTitle}>{item.name}</Text>
           </TouchableOpacity>
         )}
       />
       <View style={styles.addPatternBar}>
-        <TouchableOpacity style={styles.addPatternBtn} onPress={() => navigation.navigate('AddPattern')}>
+        <TouchableOpacity 
+          style={styles.addPatternBtn} 
+          onPress={() => navigation.navigate('AddPattern')}
+        >
           <Text style={styles.addPatternText}>new pattern</Text>
-          <View style={styles.addIcon}><Text style={{fontSize:24}}>＋</Text></View>
+          <View style={styles.addIcon}>
+            <Text style={{fontSize:24}}>＋</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -52,25 +104,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f7f7f7',
+    paddingTop: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#f7f7f7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    paddingTop: 100,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#999',
   },
   listContent: {
     padding: 16,
     paddingBottom: 100,
+    minHeight: '100%',
   },
   card: {
     flex: 1,
-    backgroundColor: '#ddd',
+    backgroundColor: '#fff',
     borderRadius: 12,
     margin: 8,
     alignItems: 'center',
     padding: 8,
     minHeight: 180,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   cover: {
     width: 120,
     height: 150,
     borderRadius: 8,
-    backgroundColor: '#ccc',
+    backgroundColor: '#f0f0f0',
     marginBottom: 8,
   },
   cardTitle: {
@@ -83,7 +162,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 24,
-    backgroundColor: '#aaa',
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 8,
     flexDirection: 'row',

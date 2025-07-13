@@ -4,13 +4,18 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import CounterPanel from '../components/Counter/CounterPanel';
 import { Counter, CounterPanelState } from '../components/Counter/CounterTypes';
+import PicsContent from '../components/PicsContent';
 
 type RootStackParamList = {
   Home: undefined;
+  AddPattern: undefined;
   PatternDetail: { 
     images: string[];
     projectName: string;
     needleSize: string;
+  };
+  EditPatternName: { 
+    images: string[];
   };
 };
 
@@ -119,12 +124,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       
       case 'pics':
         return (
-          <View style={styles.picsContent}>
-            <Text style={styles.placeholderText}>用户拍摄的照片</Text>
-            <TouchableOpacity style={styles.addPhotoBtn}>
-              <Text style={styles.addPhotoText}>+ 添加照片</Text>
-            </TouchableOpacity>
-          </View>
+          <PicsContent patternId={`${projectName}_${needleSize}`} />
         );
       
       case 'note':
@@ -147,7 +147,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       {/* 顶部导航 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={styles.closeIcon}>×</Text>
         </TouchableOpacity>
         
         {/* 标签导航 */}
@@ -214,11 +214,16 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     marginRight: 16,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backIcon: {
+  closeIcon: {
     fontSize: 32,
     color: '#222',
     fontWeight: '300',
+    lineHeight: 32,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -272,12 +277,6 @@ const styles = StyleSheet.create({
     width: screenWidth,
     height: '80%',
   },
-  picsContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
   noteContent: {
     flex: 1,
     justifyContent: 'center',
@@ -288,16 +287,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#999',
     marginBottom: 20,
-  },
-  addPhotoBtn: {
-    backgroundColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  addPhotoText: {
-    fontSize: 16,
-    color: '#666',
   },
   addNoteBtn: {
     backgroundColor: '#ddd',

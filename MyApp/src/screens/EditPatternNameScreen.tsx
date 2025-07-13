@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { Button, Input } from '../components/design-system';
+import { PatternStorage } from '../services/PatternStorage';
+import { Pattern } from '../types/Pattern';
 
 type RootStackParamList = {
   AddPattern: undefined;
@@ -27,31 +29,48 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
   const [projectName, setProjectName] = useState('');
   const [needleSize, setNeedleSize] = useState('');
   const [needleSize2, setNeedleSize2] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const savePattern = async (skipName: boolean = false) => {
+    try {
+      setSaving(true);
+      
+      const finalProjectName = skipName ? 'Untitled Pattern' : (projectName.trim() || 'Untitled Pattern');
+      const finalNeedleSize = needleSize.trim();
+      const finalNeedleSize2 = needleSize2.trim();
+      
+      const pattern: Pattern = {
+        id: Date.now().toString(),
+        name: finalProjectName,
+        images,
+        projectName: finalProjectName,
+        needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      await PatternStorage.save(pattern);
+
+      // 跳转到Pattern详情页
+      navigation.navigate('PatternDetail', {
+        images: pattern.images,
+        projectName: pattern.projectName,
+        needleSize: pattern.needleSize,
+      });
+    } catch (error) {
+      console.error('Failed to save pattern:', error);
+      Alert.alert('错误', '保存失败，请重试');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleAdd = () => {
-    const finalProjectName = projectName.trim() || 'project name';
-    const finalNeedleSize = needleSize.trim();
-    const finalNeedleSize2 = needleSize2.trim();
-    
-    // 跳转到Pattern详情页
-    navigation.navigate('PatternDetail', {
-      images,
-      projectName: finalProjectName,
-      needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
-    });
+    savePattern(false);
   };
 
   const handleSkip = () => {
-    const finalProjectName = projectName.trim() || 'project name';
-    const finalNeedleSize = needleSize.trim();
-    const finalNeedleSize2 = needleSize2.trim();
-    
-    // 跳转到Pattern详情页
-    navigation.navigate('PatternDetail', {
-      images,
-      projectName: finalProjectName,
-      needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
-    });
+    savePattern(true);
   };
 
   return (
@@ -102,6 +121,8 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
           onPress={handleAdd}
           variant="primary"
           style={styles.addBtn}
+          loading={saving}
+          disabled={saving}
         />
         
         <Button
@@ -109,6 +130,7 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
           onPress={handleSkip}
           variant="text"
           style={styles.skipBtn}
+          disabled={saving}
         />
       </View>
     </View>
@@ -144,39 +166,6 @@ const styles = StyleSheet.create({
   inputSection: {
     marginBottom: 40,
   },
-  input: {
-    fontSize: 22,
-    color: '#222',
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-  },
-  label: {
-    fontSize: 22,
-    color: '#222',
-    marginBottom: 20,
-  },
-  needleSizeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  needleSizeInput: {
-    flex: 1,
-    fontSize: 22,
-    color: '#222',
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-  },
-  unit: {
-    fontSize: 22,
-    color: '#222',
-    marginLeft: 8,
-  },
-  underline: {
-    height: 1,
-    backgroundColor: '#222',
-    marginBottom: 20,
-  },
   buttonContainer: {
     position: 'absolute',
     bottom: 60,
@@ -184,24 +173,10 @@ const styles = StyleSheet.create({
     right: 24,
   },
   addBtn: {
-    backgroundColor: '#aaa',
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: 'center',
     marginBottom: 20,
-  },
-  addBtnText: {
-    fontSize: 20,
-    color: '#222',
-    fontWeight: '500',
   },
   skipBtn: {
     alignItems: 'center',
-  },
-  skipBtnText: {
-    fontSize: 20,
-    color: '#222',
-    fontWeight: '400',
   },
 });
 

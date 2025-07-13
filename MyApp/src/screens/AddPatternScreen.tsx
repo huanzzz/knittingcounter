@@ -39,7 +39,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/xhs/images', {
+      const response = await fetch('http://192.168.1.152:3001/api/xhs/images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +104,6 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       quality: 1,
     });
