@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndi
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { Pattern } from '../types/Pattern';
-import { PatternStorage } from '../services/PatternStorage';
+import { PatternStorage } from '../utils/PatternStorage';
 
 type RootStackParamList = {
   Home: undefined;
   AddPattern: undefined;
   PatternDetail: { 
+    id: string;
     images: string[];
     projectName: string;
     needleSize: string;
@@ -38,7 +39,9 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const loadPatterns = async () => {
     try {
       setLoading(true);
+      console.log('Loading patterns...');
       const data = await PatternStorage.getAll();
+      console.log('Loaded patterns:', data.length);
       setPatterns(data);
     } catch (error) {
       console.error('Failed to load patterns:', error);
@@ -72,6 +75,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <TouchableOpacity 
             style={styles.card} 
             onPress={() => navigation.navigate('PatternDetail', {
+              id: item.id,
               images: item.images,
               projectName: item.projectName,
               needleSize: item.needleSize

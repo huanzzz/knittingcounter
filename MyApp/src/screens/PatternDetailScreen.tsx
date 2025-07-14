@@ -12,6 +12,7 @@ type RootStackParamList = {
   Home: undefined;
   AddPattern: undefined;
   PatternDetail: { 
+    id: string;
     images: string[];
     projectName: string;
     needleSize: string;
@@ -34,7 +35,7 @@ type TabType = 'pattern' | 'pics' | 'note';
 const { width: screenWidth } = Dimensions.get('window');
 
 const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { images, projectName, needleSize } = route.params;
+  const { id, images, projectName, needleSize } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>('pattern');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [counterPanelState, setCounterPanelState] = useState<CounterPanelState>('partial');
@@ -54,8 +55,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const loadCounters = async () => {
     try {
-      const patternId = `${projectName}_${needleSize}`;
-      const savedCounters = await CounterDB.getCounters(patternId);
+      const savedCounters = await CounterDB.getCounters(id);
       if (savedCounters.length > 0) {
         setCounters(savedCounters);
       } else {
@@ -76,8 +76,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const saveCounters = async () => {
     try {
-      const patternId = `${projectName}_${needleSize}`;
-      await CounterDB.saveCounters(patternId, counters);
+      await CounterDB.saveCounters(id, counters);
     } catch (error) {
       console.error('Failed to save counters:', error);
     }
@@ -158,12 +157,12 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       
       case 'pics':
         return (
-          <PicsContent patternId={`${projectName}_${needleSize}`} />
+          <PicsContent patternId={id} />
         );
       
       case 'note':
         return (
-          <NotesScreen patternId={`${projectName}_${needleSize}`} />
+          <NotesScreen patternId={id} />
         );
       
       default:

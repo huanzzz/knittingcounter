@@ -5,64 +5,92 @@ import { Counter, RowCounter, ShapeCounter } from '../components/Counter/Counter
 export const db = SQLite.openDatabaseSync('knitting.db');
 
 export const initDatabase = async () => {
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS patterns (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      project_name TEXT,
-      needle_size TEXT,
-      created_at INTEGER,
-      updated_at INTEGER
-    );
+  try {
+    console.log('Starting database initialization...');
+    
+    // 创建 patterns 表
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS patterns (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        project_name TEXT,
+        needle_size TEXT,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
+    `);
+    console.log('Created patterns table');
 
-    CREATE TABLE IF NOT EXISTS pattern_images (
-      id TEXT PRIMARY KEY,
-      pattern_id TEXT,
-      image_uri TEXT,
-      sort_order INTEGER,
-      FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
-    );
+    // 创建 pattern_images 表
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS pattern_images (
+        id TEXT PRIMARY KEY,
+        pattern_id TEXT,
+        image_uri TEXT,
+        sort_order INTEGER,
+        FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
+      );
+    `);
+    console.log('Created pattern_images table');
 
-    CREATE TABLE IF NOT EXISTS user_photos (
-      id TEXT PRIMARY KEY,
-      pattern_id TEXT,
-      photo_uri TEXT,
-      created_at INTEGER,
-      FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
-    );
+    // 创建 user_photos 表
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS user_photos (
+        id TEXT PRIMARY KEY,
+        pattern_id TEXT,
+        photo_uri TEXT,
+        created_at INTEGER,
+        FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
+      );
+    `);
+    console.log('Created user_photos table');
 
-    CREATE TABLE IF NOT EXISTS notes (
-      id TEXT PRIMARY KEY,
-      pattern_id TEXT,
-      content TEXT,
-      updated_at INTEGER,
-      FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
-    );
+    // 创建 notes 表
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY,
+        pattern_id TEXT,
+        content TEXT,
+        updated_at INTEGER,
+        FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
+      );
+    `);
+    console.log('Created notes table');
 
-    CREATE TABLE IF NOT EXISTS counters (
-      id TEXT PRIMARY KEY,
-      pattern_id TEXT,
-      name TEXT,
-      type TEXT CHECK(type IN ('row', 'shape')),
-      sort_order INTEGER,
-      current_row INTEGER,
-      start_row INTEGER,
-      end_row INTEGER,
-      current_times INTEGER,
-      max_times INTEGER,
-      current_rows INTEGER,
-      max_rows INTEGER,
-      created_at INTEGER,
-      updated_at INTEGER,
-      FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
-    );
-  `);
+    // 创建 counters 表
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS counters (
+        id TEXT PRIMARY KEY,
+        pattern_id TEXT,
+        name TEXT,
+        type TEXT CHECK(type IN ('row', 'shape')),
+        sort_order INTEGER,
+        current_row INTEGER,
+        start_row INTEGER,
+        end_row INTEGER,
+        current_times INTEGER,
+        max_times INTEGER,
+        current_rows INTEGER,
+        max_rows INTEGER,
+        created_at INTEGER,
+        updated_at INTEGER,
+        FOREIGN KEY (pattern_id) REFERENCES patterns(id) ON DELETE CASCADE
+      );
+    `);
+    console.log('Created counters table');
+    
+    console.log('Database initialization completed successfully');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw error;
+  }
 };
 
 // Pattern相关操作
 export const PatternDB = {
   // 保存新的Pattern
   savePattern: async (pattern: Pattern, images: string[]): Promise<void> => {
+    console.log('Saving pattern:', pattern);
     await db.withTransactionAsync(async () => {
       // 插入Pattern
       await db.runAsync(
@@ -77,6 +105,7 @@ export const PatternDB = {
           pattern.updatedAt
         ]
       );
+      console.log('Pattern saved to database');
 
       // 插入图片
       for (let i = 0; i < images.length; i++) {
@@ -91,11 +120,13 @@ export const PatternDB = {
           ]
         );
       }
+      console.log('Pattern images saved:', images.length, 'images');
     });
   },
 
   // 获取所有Pattern
   getAllPatterns: async (): Promise<Pattern[]> => {
+    console.log('Getting all patterns');
     const result = await db.getAllAsync<any>(
       `SELECT p.*, GROUP_CONCAT(pi.image_uri) as images
        FROM patterns p
@@ -103,6 +134,7 @@ export const PatternDB = {
        GROUP BY p.id
        ORDER BY p.created_at DESC`
     );
+    console.log('Found patterns:', result.length);
 
     return result.map(row => ({
       id: row.id,

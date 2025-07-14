@@ -10,6 +10,7 @@ type RootStackParamList = {
   AddPattern: undefined;
   EditPatternName: { images: string[] };
   PatternDetail: { 
+    id: string;
     images: string[];
     projectName: string;
     needleSize: string;
@@ -39,19 +40,26 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
       const finalNeedleSize = needleSize.trim();
       const finalNeedleSize2 = needleSize2.trim();
       
-      // 使用新的PatternStorage.save方法
-      await PatternStorage.save({
+      const pattern = {
         name: finalProjectName,
         projectName: finalProjectName,
         needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
-        images
-      }, images);
+        images: images
+      };
+      
+      // 保存 Pattern
+      await PatternStorage.save(pattern, images);
+
+      // 重新获取保存的 Pattern
+      const savedPatterns = await PatternStorage.getAll();
+      const savedPattern = savedPatterns[0]; // 最新保存的 Pattern 会在第一位
 
       // 跳转到Pattern详情页
       navigation.navigate('PatternDetail', {
-        images,
-        projectName: finalProjectName,
-        needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
+        id: savedPattern.id,
+        images: savedPattern.images,
+        projectName: savedPattern.projectName,
+        needleSize: savedPattern.needleSize
       });
     } catch (error) {
       console.error('Failed to save pattern:', error);

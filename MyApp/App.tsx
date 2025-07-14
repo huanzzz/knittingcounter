@@ -12,6 +12,7 @@ export type RootStackParamList = {
   Home: undefined;
   AddPattern: undefined;
   PatternDetail: { 
+    id: string;
     images: string[];
     projectName: string;
     needleSize: string;
