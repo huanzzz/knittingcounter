@@ -386,8 +386,8 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
               onPress={handleLinkAdd}
               disabled={isLoading}
               loading={isLoading}
-              variant="secondary"
-              size="small"
+              variant="primary"
+              size="medium"
               style={styles.addButton}
             />
           }
@@ -396,23 +396,25 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
         {/* 其他添加方式 */}
         <View style={styles.addBox}>
           <Text style={styles.addLabel}>pics</Text>
-          <TouchableOpacity 
-            style={[styles.addBtn, isLoading && styles.addBtnDisabled]} 
+          <Button
+            title="add"
             onPress={handleImagePicker}
             disabled={isLoading}
-          >
-            <Text style={styles.addBtnText}>add</Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="medium"
+            style={styles.addButton}
+          />
         </View>
         <View style={styles.addBox}>
           <Text style={styles.addLabel}>pdf</Text>
-          <TouchableOpacity 
-            style={[styles.addBtn, isLoading && styles.addBtnDisabled]}
+          <Button
+            title="add"
             onPress={handlePdfPicker}
             disabled={isLoading}
-          >
-            <Text style={styles.addBtnText}>add</Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="medium"
+            style={styles.addButton}
+          />
         </View>
 
         {isLoading && (
