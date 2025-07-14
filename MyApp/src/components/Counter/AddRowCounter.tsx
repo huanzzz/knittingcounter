@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Input, Button } from '../design-system';
 import { AddRowCounterForm, RowCounter } from './CounterTypes';
 
@@ -66,67 +66,69 @@ const AddRowCounter: React.FC<AddRowCounterProps> = ({ onAdd, onCancel }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
-          <Text style={styles.closeText}>×</Text>
-        </TouchableOpacity>
-        
-        <Button
-          variant="primary"
-          size="small"
-          title="add"
-          onPress={handleAdd}
-          style={styles.addBtn}
-        />
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.nameSection}>
-          <Input
-            variant="underline"
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
+            <Text style={styles.closeText}>×</Text>
+          </TouchableOpacity>
+          
+          <Button
+            variant="primary"
             size="small"
-            value={form.name}
-            onChangeText={(value) => setForm(prev => ({ ...prev, name: value }))}
-            placeholder="name"
-            keyboardType="default"
-            style={styles.nameInput}
+            title="add"
+            onPress={handleAdd}
+            style={styles.addBtn}
           />
         </View>
 
-        <View style={styles.valuesSection}>
-          <View style={styles.valueGroup}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>start</Text>
-              <View style={styles.valueInput}>
-                <TextInput
-                  value={form.startRow}
-                  onChangeText={handleStartRowChange}
-                  keyboardType="numeric"
-                  style={styles.inputText}
-                  textAlign="center"
-                />
-              </View>
-            </View>
+        <View style={styles.form}>
+          <View style={styles.nameSection}>
+            <Input
+              variant="underline"
+              size="small"
+              value={form.name}
+              onChangeText={(value) => setForm(prev => ({ ...prev, name: value }))}
+              placeholder="name"
+              keyboardType="default"
+              style={styles.nameInput}
+            />
           </View>
 
-          <View style={styles.valueGroup}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>end</Text>
-              <View style={styles.valueInput}>
-                <TextInput
-                  value={form.endRow}
-                  onChangeText={handleEndRowChange}
-                  keyboardType="numeric"
-                  style={styles.inputText}
-                  textAlign="center"
-                />
+          <View style={styles.valuesSection}>
+            <View style={styles.valueGroup}>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>start</Text>
+                <View style={styles.valueInput}>
+                  <TextInput
+                    value={form.startRow}
+                    onChangeText={handleStartRowChange}
+                    keyboardType="numeric"
+                    style={styles.inputText}
+                    textAlign="center"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.valueGroup}>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>end</Text>
+                <View style={styles.valueInput}>
+                  <TextInput
+                    value={form.endRow}
+                    onChangeText={handleEndRowChange}
+                    keyboardType="numeric"
+                    style={styles.inputText}
+                    textAlign="center"
+                  />
+                </View>
               </View>
             </View>
           </View>
         </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { Button, Input } from '../components/design-system';
@@ -78,66 +78,68 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 顶部关闭按钮和标题 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-          <Text style={styles.closeIcon}>×</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>new pattern</Text>
-      </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* 顶部关闭按钮和标题 */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+            <Text style={styles.closeIcon}>×</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>new pattern</Text>
+        </View>
 
-      {/* 项目名称输入框 */}
-      <Input
-        variant="underline"
-        placeholder="project name"
-        value={projectName}
-        onChangeText={setProjectName}
-        style={styles.inputSection}
-      />
-
-      {/* 针号输入框 */}
-      <View style={styles.inputSection}>
+        {/* 项目名称输入框 */}
         <Input
           variant="underline"
-          label="needle size"
-          placeholder=""
-          value={needleSize}
-          onChangeText={setNeedleSize}
-          keyboardType="numeric"
-          suffix="mm"
+          placeholder="project name"
+          value={projectName}
+          onChangeText={setProjectName}
+          style={styles.inputSection}
         />
-        
-        <Input
-          variant="underline"
-          placeholder=""
-          value={needleSize2}
-          onChangeText={setNeedleSize2}
-          keyboardType="numeric"
-          suffix="mm"
-        />
-      </View>
 
-      {/* 底部按钮 */}
-      <View style={styles.buttonContainer}>
-        <Button
-          title="add"
-          onPress={handleAdd}
-          variant="primary"
-          style={styles.addBtn}
-          loading={saving}
-          disabled={saving}
-        />
-        
-        <Button
-          title="skip"
-          onPress={handleSkip}
-          variant="text"
-          style={styles.skipBtn}
-          disabled={saving}
-        />
+        {/* 针号输入框 */}
+        <View style={styles.inputSection}>
+          <Input
+            variant="underline"
+            label="needle size"
+            placeholder=""
+            value={needleSize}
+            onChangeText={setNeedleSize}
+            keyboardType="numeric"
+            suffix="mm"
+          />
+          
+          <Input
+            variant="underline"
+            placeholder=""
+            value={needleSize2}
+            onChangeText={setNeedleSize2}
+            keyboardType="numeric"
+            suffix="mm"
+          />
+        </View>
+
+        {/* 底部按钮 */}
+        <View style={styles.buttonContainer}>
+          <Button
+            title="add"
+            onPress={handleAdd}
+            variant="primary"
+            style={styles.addBtn}
+            loading={saving}
+            disabled={saving}
+          />
+          
+          <Button
+            title="skip"
+            onPress={handleSkip}
+            variant="text"
+            style={styles.skipBtn}
+            disabled={saving}
+          />
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, Dimensions, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, Dimensions, PanResponder, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Input } from '../components/design-system';
@@ -266,7 +266,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.thumbnailList}
-            scrollEnabled={scrollEnabled} // 动态控制是否可滚动
+            scrollEnabled={scrollEnabled}
           >
             {extractedImages.map((imageUrl, index) => (
               <DraggableThumbnail
@@ -295,50 +295,51 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* 顶部关闭按钮和标题 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-          <Text style={styles.closeIcon}>×</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>new pattern</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+            <Text style={styles.closeIcon}>×</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>new pattern</Text>
+        </View>
+
+        {/* 链接输入框 */}
+        <Input
+          variant="default"
+          placeholder="link"
+          value={linkUrl}
+          onChangeText={setLinkUrl}
+          disabled={isLoading}
+          style={styles.linkInputContainer}
+          suffix={
+            <Button
+              title="add"
+              onPress={handleLinkAdd}
+              disabled={isLoading}
+              loading={isLoading}
+              variant="secondary"
+              size="small"
+              style={styles.addButton}
+            />
+          }
+        />
+        
+        {/* 其他添加方式 */}
+        <View style={styles.addBox}>
+          <Text style={styles.addLabel}>pics</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={handleAddMoreImages}>
+            <Text style={styles.addBtnText}>add</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.addBox}>
+          <Text style={styles.addLabel}>pdf</Text>
+          <TouchableOpacity style={styles.addBtn}>
+            <Text style={styles.addBtnText}>add</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      
-      {/* 链接输入框 */}
-      <Input
-        variant="default"
-        placeholder="link"
-        value={linkUrl}
-        onChangeText={setLinkUrl}
-        disabled={isLoading}
-        style={styles.linkInputContainer}
-        suffix={
-          <Button
-            title="add"
-            onPress={handleLinkAdd}
-            disabled={isLoading}
-            loading={isLoading}
-            variant="secondary"
-            size="small"
-            style={styles.addButton}
-          />
-        }
-      />
-      
-      {/* 其他添加方式 */}
-      <View style={styles.addBox}>
-        <Text style={styles.addLabel}>pics</Text>
-        <TouchableOpacity style={styles.addBtn}>
-          <Text style={styles.addBtnText}>add</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.addBox}>
-        <Text style={styles.addLabel}>pdf</Text>
-        <TouchableOpacity style={styles.addBtn}>
-          <Text style={styles.addBtnText}>add</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -403,7 +404,7 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   previewContainer: {
-    height: screenWidth * 1.0, // 1:1.25比例
+    height: screenWidth * 1.0,
     backgroundColor: '#f0f0f0',
     marginBottom: 20,
     borderRadius: 8,
@@ -416,12 +417,12 @@ const styles = StyleSheet.create({
   thumbnailContainer: {
     height: 100,
     marginBottom: 20,
-    marginTop: 0, // 增加上边距
-    paddingTop: 0, // 增加内部上边距，确保删除按钮不被遮挡
+    marginTop: 0,
+    paddingTop: 0,
   },
   thumbnailList: {
     paddingHorizontal: 4,
-    paddingVertical: 10, // 增加垂直内边距
+    paddingVertical: 10,
   },
   thumbnailWrapper: {
     marginRight: 12,
@@ -429,8 +430,8 @@ const styles = StyleSheet.create({
   },
   draggingThumbnail: {
     zIndex: 1000,
-    elevation: 10, // Android 阴影
-    shadowColor: '#000', // iOS 阴影
+    elevation: 10,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -451,15 +452,15 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     position: 'absolute',
-    top: -6, // 稍微向上，确保在图片上层
-    right: -6, // 稍微向右，确保在图片上层
+    top: -6,
+    right: -6,
     width: 20,
     height: 20,
     borderRadius: 10,
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10, // 确保在最上层
+    zIndex: 10,
   },
   deleteIcon: {
     color: '#fff',
