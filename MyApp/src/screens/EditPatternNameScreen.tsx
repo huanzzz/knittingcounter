@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { Button, Input } from '../components/design-system';
-import { PatternStorage } from '../services/PatternStorage';
+import { PatternStorage } from '../utils/PatternStorage';  // 更新导入路径
 import { Pattern } from '../types/Pattern';
 
 type RootStackParamList = {
@@ -39,23 +39,19 @@ const EditPatternNameScreen: React.FC<Props> = ({ navigation, route }) => {
       const finalNeedleSize = needleSize.trim();
       const finalNeedleSize2 = needleSize2.trim();
       
-      const pattern: Pattern = {
-        id: Date.now().toString(),
+      // 使用新的PatternStorage.save方法
+      await PatternStorage.save({
         name: finalProjectName,
-        images,
         projectName: finalProjectName,
         needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-
-      await PatternStorage.save(pattern);
+        images
+      }, images);
 
       // 跳转到Pattern详情页
       navigation.navigate('PatternDetail', {
-        images: pattern.images,
-        projectName: pattern.projectName,
-        needleSize: pattern.needleSize,
+        images,
+        projectName: finalProjectName,
+        needleSize: finalNeedleSize2 ? `${finalNeedleSize}, ${finalNeedleSize2}` : finalNeedleSize,
       });
     } catch (error) {
       console.error('Failed to save pattern:', error);

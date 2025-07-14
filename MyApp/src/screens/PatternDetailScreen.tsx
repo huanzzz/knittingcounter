@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, PanResponder } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import CounterPanel from '../components/Counter/CounterPanel';
 import { Counter, CounterPanelState } from '../components/Counter/CounterTypes';
 import PicsContent from '../components/PicsContent';
+import NotesScreen from './NotesScreen';
+import { CounterDB } from '../utils/database';
 
 type RootStackParamList = {
   Home: undefined;
@@ -38,16 +40,48 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [counterPanelState, setCounterPanelState] = useState<CounterPanelState>('partial');
   
   // 初始化计数器数据
-  const [counters, setCounters] = useState<Counter[]>([
-    {
-      id: '1',
-      name: '',
-      type: 'row',
-      currentRow: 1,
-      startRow: 1,
-      endRow: 100,
-    },
-  ]);
+  const [counters, setCounters] = useState<Counter[]>([]);
+
+  // 加载计数器数据
+  useEffect(() => {
+    loadCounters();
+  }, []);
+
+  // 保存计数器数据
+  useEffect(() => {
+    saveCounters();
+  }, [counters]);
+
+  const loadCounters = async () => {
+    try {
+      const patternId = `${projectName}_${needleSize}`;
+      const savedCounters = await CounterDB.getCounters(patternId);
+      if (savedCounters.length > 0) {
+        setCounters(savedCounters);
+      } else {
+        // 如果没有保存的计数器，创建一个默认的
+        setCounters([{
+          id: Date.now().toString(),
+          name: '',
+          type: 'row',
+          currentRow: 1,
+          startRow: 1,
+          endRow: 100,
+        }]);
+      }
+    } catch (error) {
+      console.error('Failed to load counters:', error);
+    }
+  };
+
+  const saveCounters = async () => {
+    try {
+      const patternId = `${projectName}_${needleSize}`;
+      await CounterDB.saveCounters(patternId, counters);
+    } catch (error) {
+      console.error('Failed to save counters:', error);
+    }
+  };
 
   // 图片轮播的PanResponder
   const imagePanResponder = PanResponder.create({
@@ -129,12 +163,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       
       case 'note':
         return (
-          <View style={styles.noteContent}>
-            <Text style={styles.placeholderText}>用户的笔记</Text>
-            <TouchableOpacity style={styles.addNoteBtn}>
-              <Text style={styles.addNoteText}>+ 添加笔记</Text>
-            </TouchableOpacity>
-          </View>
+          <NotesScreen patternId={`${projectName}_${needleSize}`} />
         );
       
       default:

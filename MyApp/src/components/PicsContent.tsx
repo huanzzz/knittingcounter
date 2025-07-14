@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, FlatList, Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { PhotoStorage } from '../utils/PhotoStorage';
 
 interface PicsContentProps {
   patternId: string;
@@ -12,6 +13,24 @@ const GRID_ITEM_SIZE = (screenWidth - 48) / GRID_COLS;
 
 const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
   const [photos, setPhotos] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 加载照片
+  useEffect(() => {
+    loadPhotos();
+  }, [patternId]);
+
+  const loadPhotos = async () => {
+    try {
+      const savedPhotos = await PhotoStorage.getPhotos(patternId);
+      setPhotos(savedPhotos);
+    } catch (error) {
+      console.error('加载照片失败:', error);
+      Alert.alert('错误', '加载照片失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 拍照
   const takePhoto = async () => {
@@ -30,7 +49,9 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setPhotos(prev => [...prev, result.assets[0].uri]);
+        const photoUri = result.assets[0].uri;
+        await PhotoStorage.savePhoto(patternId, photoUri);
+        setPhotos(prev => [...prev, photoUri]);
       }
     } catch (error) {
       Alert.alert('错误', '拍照失败');
@@ -40,35 +61,24 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
 
   // 从相册选择
   const pickFromLibrary = async () => {
-    console.log('开始选择相册照片...');
-    
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    console.log('权限请求结果:', permissionResult);
     
     if (permissionResult.granted === false) {
       Alert.alert('权限', '需要相册权限来选择图片');
-      console.log('权限被拒绝');
       return;
     }
-
-    console.log('相册权限已获得，即将打开相册...');
     
     try {
-      console.log('正在调用 launchImageLibraryAsync...');
-      
       const result = await ImagePicker.launchImageLibraryAsync({
         quality: 0.8,
         allowsMultipleSelection: true,
       });
 
-      console.log('相册选择结果:', result);
-
       if (!result.canceled && result.assets) {
         const newPhotos = result.assets.map(asset => asset.uri);
-        console.log('添加新照片:', newPhotos);
+        // 保存所有新照片
+        await Promise.all(newPhotos.map(uri => PhotoStorage.savePhoto(patternId, uri)));
         setPhotos(prev => [...prev, ...newPhotos]);
-      } else {
-        console.log('用户取消了相册选择或没有选择照片');
       }
     } catch (error) {
       console.error('选择照片错误:', error);
@@ -77,7 +87,7 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
   };
 
   // 删除照片
-  const deletePhoto = (index: number) => {
+  const deletePhoto = async (photoUri: string) => {
     Alert.alert(
       '删除照片',
       '确定要删除这张照片吗？',
@@ -86,8 +96,14 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
         {
           text: '删除',
           style: 'destructive',
-          onPress: () => {
-            setPhotos(prev => prev.filter((_, i) => i !== index));
+          onPress: async () => {
+            try {
+              await PhotoStorage.deletePhoto(patternId, photoUri);
+              setPhotos(prev => prev.filter(uri => uri !== photoUri));
+            } catch (error) {
+              console.error('删除照片失败:', error);
+              Alert.alert('错误', '删除照片失败');
+            }
           },
         },
       ]
@@ -121,16 +137,15 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
     }
 
     if (item) {
-      const photoIndex = photos.indexOf(item);
       return (
         <TouchableOpacity 
           style={styles.photoItem}
-          onLongPress={() => deletePhoto(photoIndex)}
+          onLongPress={() => deletePhoto(item)}
         >
           <Image source={{ uri: item }} style={styles.photoImage} />
           <TouchableOpacity 
             style={styles.deleteBtn}
-            onPress={() => deletePhoto(photoIndex)}
+            onPress={() => deletePhoto(item)}
           >
             <Text style={styles.deleteIcon}>×</Text>
           </TouchableOpacity>
@@ -140,6 +155,14 @@ const PicsContent: React.FC<PicsContentProps> = ({ patternId }) => {
 
     return <View style={styles.emptyItem} />;
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text>加载中...</Text>
+      </View>
+    );
+  }
 
   const gridData = [null, null, ...photos];
 
@@ -160,6 +183,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gridContainer: {
     padding: 16,
