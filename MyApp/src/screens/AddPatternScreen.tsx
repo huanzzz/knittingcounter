@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, Dimensions, PanResponder, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Button, Input } from '../components/design-system';
 
 type RootStackParamList = {
@@ -24,7 +27,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
   const [extractedImages, setExtractedImages] = useState<string[]>([]);
   const [showImages, setShowImages] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [scrollEnabled, setScrollEnabled] = useState(true); // 新增：控制ScrollView是否可滚动
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   const handleLinkAdd = async () => {
     if (!linkUrl.trim()) {
@@ -95,22 +98,88 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  const handleAddMoreImages = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert('权限', '需要相册权限来选择图片');
-      return;
+  // 处理图片选择
+  const handleImagePicker = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('提示', '需要相册权限来选择图片');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets) {
+        const selectedImages = result.assets.map(asset => asset.uri);
+        setExtractedImages(selectedImages);
+        setShowImages(true);
+        setSelectedImageIndex(0);
+      }
+    } catch (error) {
+      console.error('选择图片失败:', error);
+      Alert.alert('错误', '选择图片失败，请重试');
     }
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsMultipleSelection: true,
-      quality: 1,
-    });
+  // 处理PDF选择
+  const handlePdfPicker = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+      });
 
-    if (!result.canceled && result.assets) {
-      const newImageUris = result.assets.map((asset: any) => asset.uri);
-      setExtractedImages([...extractedImages, ...newImageUris]);
+      if (result.canceled) {
+        return;
+      }
+
+      setIsLoading(true);
+      const pdfUri = result.assets[0].uri;
+      
+      // 创建FormData对象
+      const formData = new FormData();
+      formData.append('pdf', {
+        uri: pdfUri,
+        type: 'application/pdf',
+        name: 'pattern.pdf'
+      } as any);
+
+      // 调用后端API转换PDF
+      const response = await fetch('http://192.168.1.152:3000/api/convert-pdf', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('PDF转换失败');
+      }
+
+      const data = await response.json();
+      
+      if (data.images && data.images.length > 0) {
+        // 将后端返回的图片路径转换为完整URL
+        const imageUrls = data.images.map((img: any) => 
+          `http://192.168.1.152:3000/api/images/${img.path.split('/').pop()}`
+        );
+        setExtractedImages(imageUrls);
+        setShowImages(true);
+        setSelectedImageIndex(0);
+      } else {
+        throw new Error('未能从PDF中提取图片');
+      }
+
+    } catch (error) {
+      console.error('PDF处理失败:', error);
+      Alert.alert('错误', '无法处理PDF文件，请重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -280,7 +349,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
             ))}
             
             {/* 添加更多图片按钮 */}
-            <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddMoreImages}>
+            <TouchableOpacity style={styles.addMoreBtn} onPress={handleImagePicker}>
               <Text style={styles.addMoreIcon}>+</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -328,16 +397,31 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
         {/* 其他添加方式 */}
         <View style={styles.addBox}>
           <Text style={styles.addLabel}>pics</Text>
-          <TouchableOpacity style={styles.addBtn} onPress={handleAddMoreImages}>
+          <TouchableOpacity 
+            style={[styles.addBtn, isLoading && styles.addBtnDisabled]} 
+            onPress={handleImagePicker}
+            disabled={isLoading}
+          >
             <Text style={styles.addBtnText}>add</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.addBox}>
           <Text style={styles.addLabel}>pdf</Text>
-          <TouchableOpacity style={styles.addBtn}>
+          <TouchableOpacity 
+            style={[styles.addBtn, isLoading && styles.addBtnDisabled]}
+            onPress={handlePdfPicker}
+            disabled={isLoading}
+          >
             <Text style={styles.addBtnText}>add</Text>
           </TouchableOpacity>
         </View>
+
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#666" />
+            <Text style={styles.loadingText}>处理中...</Text>
+          </View>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
@@ -498,6 +582,21 @@ const styles = StyleSheet.create({
   },
   addButton: {
     minWidth: 60,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
 });
 

@@ -1,20 +1,20 @@
 {
-  "name": "knitting-pattern-backend",
+  "name": "knitting-counter-backend",
   "version": "1.0.0",
-  "description": "Backend API for knitting pattern app",
-  "main": "server.js",
+  "description": "Backend service for knitting counter app",
+  "main": "src/index.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "axios": "^1.6.0",
-    "cheerio": "^1.0.0-rc.12",
-    "cors": "^2.8.5",
-    "puppeteer": "^21.5.0"
+    "express": "^4.18.3",
+    "multer": "^1.4.5-lts.1",
+    "pdf-to-png-converter": "^3.7.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.0"
   }
 } 

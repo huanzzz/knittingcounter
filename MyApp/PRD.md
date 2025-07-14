@@ -37,12 +37,19 @@
 - 支持从相册选择多张图片
 - 上传后可删除或改变图片顺序
 
-### 2.4 PDF上传功能 🚧 待实现
-- 支持上传PDF文件
-- PDF预览和页面管理
+### 2.4 PDF上传功能 ✅ 已实现
+- 支持上传PDF文件并自动转换为图片
+- 使用后端服务进行PDF转换，支持多页PDF
+- 转换后的图片支持预览、删除和排序
+- 支持高分辨率输出（2x缩放）
+- 与其他图片来源共用相同的图片管理界面
 
 ### 2.5 技术实现细节
-- **后端服务**：Node.js + Express，端口3001
+- **后端服务**：
+  - Node.js + Express，端口3000
+  - PDF转换服务：使用pdf-to-png-converter库
+  - 文件上传：使用multer处理multipart/form-data
+  - 图片服务：提供静态图片访问API
 - **图片抓取**：双重策略（基础爬虫 + Puppeteer）
 - **手势处理**：使用PanResponder实现拖拽排序
 - **状态管理**：React hooks管理图片列表、选中状态等
@@ -169,13 +176,25 @@
 ---
 
 ## 开发进度
-- ✅ **已完成**：Home页面基础布局、小红书链接抓取完整流程、Pattern信息编辑、Pics标签页功能
+- ✅ **已完成**：
+  - Home页面基础布局
+  - 小红书链接抓取完整流程
+  - Pattern信息编辑
+  - Pics标签页功能
+  - PDF上传和转换功能
 - 🚧 **进行中**：Pattern详情页面（计数器组件）
-- 📋 **待开发**：图片/PDF上传、数据持久化、笔记功能
+- 📋 **待开发**：
+  - 图片上传功能
+  - 数据持久化
+  - 笔记功能
 
 ## 技术栈
 - **前端**：React Native + Expo
-- **后端**：Node.js + Express
+- **后端**：
+  - Node.js + Express
+  - pdf-to-png-converter（PDF转换）
+  - multer（文件上传）
+  - cors（跨域支持）
 - **图片处理**：expo-image-picker
 - **导航**：React Navigation
 - **手势处理**：PanResponder
