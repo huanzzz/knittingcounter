@@ -116,9 +116,8 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
 
       if (!result.canceled && result.assets) {
         const selectedImages = result.assets.map(asset => asset.uri);
-        setExtractedImages(selectedImages);
+        setExtractedImages(prevImages => [...prevImages, ...selectedImages]);
         setShowImages(true);
-        setSelectedImageIndex(0);
       }
     } catch (error) {
       console.error('选择图片失败:', error);
