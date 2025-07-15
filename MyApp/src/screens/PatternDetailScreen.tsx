@@ -32,7 +32,11 @@ type Props = {
 
 type TabType = 'pattern' | 'pics' | 'note';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const HEADER_HEIGHT = 96; // 顶部导航栏高度
+const COUNTER_PANEL_HEIGHT = 120; // CounterPanel 高度
+const SAFE_AREA_BOTTOM = 38; // 底部安全区高度
+const CONTENT_HEIGHT = screenHeight - HEADER_HEIGHT - COUNTER_PANEL_HEIGHT + SAFE_AREA_BOTTOM;
 
 const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { id, images, projectName, needleSize } = route.params;
@@ -284,7 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   content: {
-    flex: 1,
+    height: CONTENT_HEIGHT,
   },
   patternContent: {
     flex: 1,
