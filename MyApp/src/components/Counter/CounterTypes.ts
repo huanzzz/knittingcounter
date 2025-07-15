@@ -19,6 +19,7 @@ export interface ShapeCounter extends BaseCounter {
   maxTimes: number;
   currentRows: number;
   maxRows: number;
+  isLinked: boolean; // 是否为连接模式
 }
 
 export type Counter = RowCounter | ShapeCounter;

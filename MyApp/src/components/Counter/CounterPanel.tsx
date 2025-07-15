@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, PanResponder, Dimensions } from 'react-native';
 import { CounterPanelProps, CounterPanelState, Counter, AddCounterMode } from './CounterTypes';
 import RowCounter from './RowCounter';
@@ -23,6 +23,76 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
 }) => {
   const [addMode, setAddMode] = useState<AddCounterMode>(null);
   const [editingCounter, setEditingCounter] = useState<Counter | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const SCROLL_EDGE_THRESHOLD = 100; // 触发自动滚动的边缘距离
+  const SCROLL_SPEED = 5; // 自动滚动速度
+
+  // 清理自动滚动
+  const clearAutoScroll = () => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+      autoScrollTimer.current = null;
+    }
+  };
+
+  // 处理自动滚动
+  const handleAutoScroll = (y: number) => {
+    if (!scrollViewRef.current || panelState !== 'expanded') return;
+
+    const scrollView = scrollViewRef.current;
+    scrollView.measure((x, y, width, height, pageX, pageY) => {
+      const scrollViewTop = pageY;
+      const scrollViewBottom = pageY + height;
+
+      // 清除现有的自动滚动定时器
+      clearAutoScroll();
+
+      // 检查是否需要自动滚动
+      if (y - scrollViewTop < SCROLL_EDGE_THRESHOLD) {
+        // 向上滚动
+        autoScrollTimer.current = setInterval(() => {
+          scrollView.scrollTo({
+            y: scrollView.scrollY - SCROLL_SPEED,
+            animated: false
+          });
+        }, 16);
+      } else if (scrollViewBottom - y < SCROLL_EDGE_THRESHOLD) {
+        // 向下滚动
+        autoScrollTimer.current = setInterval(() => {
+          scrollView.scrollTo({
+            y: scrollView.scrollY + SCROLL_SPEED,
+            animated: false
+          });
+        }, 16);
+      }
+    });
+  };
+
+  // 开始拖拽
+  const handleStartDrag = () => {
+    setIsDragging(true);
+  };
+
+  // 结束拖拽
+  const handleEndDrag = () => {
+    setIsDragging(false);
+    clearAutoScroll();
+  };
+
+  // 拖拽移动
+  const handleDragMove = (y: number) => {
+    handleAutoScroll(y);
+  };
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      clearAutoScroll();
+    };
+  }, []);
 
   const getVisibleCounters = () => {
     switch (panelState) {
@@ -115,15 +185,20 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   };
 
   const renderCounter = (counter: Counter, index: number) => {
+    const visibleIndex = panelState === 'expanded' ? index : getVisibleCounters().findIndex(c => c.id === counter.id);
+    
     return (
       <SwipeableCounter
         key={counter.id}
         counter={counter}
-        index={index}
+        index={visibleIndex}
         onUpdate={onCounterUpdate}
         onEdit={handleCounterEdit}
         onDelete={onCounterDelete}
         onReorder={onCounterReorder}
+        onStartDrag={handleStartDrag}
+        onEndDrag={handleEndDrag}
+        onDragMove={handleDragMove}
       />
     );
   };
@@ -205,8 +280,16 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
           {/* 计数器列表 */}
           {!addMode && (
             <View style={styles.counterList}>
-              {panelState === 'expanded' && counters.length > 3 ? (
-                <ScrollView showsVerticalScrollIndicator={false}>
+              {panelState === 'expanded' ? (
+                <ScrollView 
+                  ref={scrollViewRef}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={!isDragging}
+                  decelerationRate="normal"
+                  scrollEventThrottle={16}
+                  alwaysBounceVertical={false}
+                  contentContainerStyle={styles.scrollContent}
+                >
                   {counters.map((counter, index) => renderCounter(counter, index))}
                 </ScrollView>
               ) : (
@@ -282,6 +365,10 @@ const styles = StyleSheet.create({
   },
   counterList: {
     marginTop: 15, // 添加顶部边距
+    flex: 1,  // 让列表容器占满剩余空间
+  },
+  scrollContent: {
+    paddingBottom: 20,  // 添加底部内边距
   },
 });
 

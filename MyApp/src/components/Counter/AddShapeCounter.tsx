@@ -56,10 +56,11 @@ const AddShapeCounter: React.FC<AddShapeCounterProps> = ({ onAdd, onCancel }) =>
       id: Date.now().toString(),
       name: form.name,
       type: 'shape',
-      currentTimes: 0,
+      currentTimes: 1, // 从1开始
       maxTimes: parseInt(form.times),
-      currentRows: 0,
+      currentRows: 1, // 从1开始
       maxRows: parseInt(form.rows),
+      isLinked: form.isLinked,
     };
 
     onAdd(newCounter);

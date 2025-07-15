@@ -21,22 +21,56 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
   const handleTimesDecrement = () => {
     onUpdate({
       ...counter,
-      currentTimes: Math.max(0, counter.currentTimes - 1),
+      currentTimes: Math.max(1, counter.currentTimes - 1), // 最小值为1
     });
   };
 
   const handleRowsIncrement = () => {
-    onUpdate({
-      ...counter,
-      currentRows: counter.currentRows + 1,
-    });
+    if (counter.isLinked) {
+      // 连接模式：当rows达到最大值时，times自动+1，rows重置为1
+      if (counter.currentRows + 1 > counter.maxRows) {
+        onUpdate({
+          ...counter,
+          currentTimes: counter.currentTimes + 1,
+          currentRows: 1,
+        });
+      } else {
+        onUpdate({
+          ...counter,
+          currentRows: counter.currentRows + 1,
+        });
+      }
+    } else {
+      // 独立模式：rows和times互不影响
+      onUpdate({
+        ...counter,
+        currentRows: counter.currentRows + 1,
+      });
+    }
   };
 
   const handleRowsDecrement = () => {
-    onUpdate({
-      ...counter,
-      currentRows: Math.max(0, counter.currentRows - 1),
-    });
+    if (counter.isLinked) {
+      // 连接模式：当rows为1且times>1时，times-1，rows设为最大值
+      if (counter.currentRows === 1 && counter.currentTimes > 1) {
+        onUpdate({
+          ...counter,
+          currentTimes: counter.currentTimes - 1,
+          currentRows: counter.maxRows,
+        });
+      } else {
+        onUpdate({
+          ...counter,
+          currentRows: Math.max(1, counter.currentRows - 1), // 最小值为1
+        });
+      }
+    } else {
+      // 独立模式：rows和times互不影响
+      onUpdate({
+        ...counter,
+        currentRows: Math.max(1, counter.currentRows - 1), // 最小值为1
+      });
+    }
   };
 
   return (
@@ -63,7 +97,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
             <View style={styles.progressContainer}>
               <SemiCircleProgress
                 currentValue={counter.currentTimes}
-                startValue={0}
+                startValue={1}
                 endValue={counter.maxTimes}
                 size={80}
               />
@@ -78,6 +112,14 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
           <Text style={styles.label}>times</Text>
         </View>
 
+        {/* 连接线指示器 */}
+        <View style={styles.linkIndicator}>
+          <View style={[
+            styles.linkLine,
+            !counter.isLinked && styles.linkLineDisabled
+          ]} />
+        </View>
+
         {/* Rows Counter */}
         <View style={styles.counterGroup}>
           <View style={styles.content}>
@@ -90,7 +132,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
             <View style={styles.progressContainer}>
               <SemiCircleProgress
                 currentValue={counter.currentRows}
-                startValue={0}
+                startValue={1}
                 endValue={counter.maxRows}
                 size={80}
               />
@@ -177,6 +219,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 6, // 【UI调整】半圆和按钮之间的间距
     marginTop: -12, // 【UI调整】半圆往上挪：负数向上，正数向下
+  },
+  linkIndicator: {
+    width: 20,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linkLine: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#666',
+  },
+  linkLineDisabled: {
+    backgroundColor: '#ddd',
   },
 });
 

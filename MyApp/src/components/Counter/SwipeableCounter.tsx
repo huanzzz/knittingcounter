@@ -1,10 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Alert } from 'react-native';
 import { Counter } from './CounterTypes';
 import RowCounter from './RowCounter';
 import ShapeCounter from './ShapeCounter';
-
-const { width: screenWidth } = Dimensions.get('window');
+import { Ionicons } from '@expo/vector-icons';
 
 interface SwipeableCounterProps {
   counter: Counter;
@@ -13,6 +12,9 @@ interface SwipeableCounterProps {
   onEdit: (counter: Counter) => void;
   onDelete: (id: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  onStartDrag: () => void;
+  onEndDrag: () => void;
+  onDragMove: (y: number) => void;
 }
 
 const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
@@ -22,90 +24,133 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
   onEdit,
   onDelete,
   onReorder,
+  onStartDrag,
+  onEndDrag,
+  onDragMove,
 }) => {
   const [isSwipeOpen, setIsSwipeOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const SWIPE_THRESHOLD = 100;
   const ACTION_BUTTON_WIDTH = 80;
+  const ITEM_HEIGHT = 112;
+  const LONG_PRESS_DELAY = 200;
 
-  // 手势处理
-  const swipePanResponder = PanResponder.create({
+  // 拖拽手势处理
+  const dragPanResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      if (isDragging) {
-        return Math.abs(gestureState.dy) > 5;
-      }
-      return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 30;
-    },
-    onPanResponderGrant: (evt) => {
-      longPressTimer.current = setTimeout(() => {
+    onMoveShouldSetPanResponder: () => false,
+    onPanResponderGrant: () => {
+      // 开始长按计时
+      longPressTimeout.current = setTimeout(() => {
         setIsDragging(true);
-      }, 500);
+        onStartDrag();
+        translateY.setValue(0);
+      }, LONG_PRESS_DELAY);
     },
     onPanResponderMove: (evt, gestureState) => {
+      if (!isDragging) return;
+
+      // 移动当前项目
+      translateY.setValue(gestureState.dy);
+      
+      // 通知父组件当前位置，用于处理自动滚动
+      onDragMove(evt.nativeEvent.pageY);
+
+      // 计算目标位置
+      const moveDistance = gestureState.dy;
+      const moveItems = Math.round(moveDistance / ITEM_HEIGHT);
+      
+      if (Math.abs(moveItems) >= 1) {
+        const newIndex = Math.max(0, Math.min(index + moveItems, 999));
+        if (newIndex !== index) {
+          onReorder(index, newIndex);
+          // 重置位置
+          translateY.setValue(0);
+        }
+      }
+    },
+    onPanResponderRelease: () => {
+      // 清除长按计时器
+      if (longPressTimeout.current) {
+        clearTimeout(longPressTimeout.current);
+        longPressTimeout.current = null;
+      }
+
       if (isDragging) {
-        translateY.setValue(gestureState.dy);
-        return;
+        setIsDragging(false);
+        onEndDrag();
+        
+        // 重置位置
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 5,
+          tension: 40
+        }).start();
+      }
+    },
+    onPanResponderTerminate: () => {
+      // 清除长按计时器
+      if (longPressTimeout.current) {
+        clearTimeout(longPressTimeout.current);
+        longPressTimeout.current = null;
       }
 
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
+      if (isDragging) {
+        setIsDragging(false);
+        onEndDrag();
+        
+        // 重置位置
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 5,
+          tension: 40
+        }).start();
       }
+    }
+  });
 
-      if (gestureState.dx < -50) {
+  // 滑动手势处理
+  const swipePanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      if (isDragging) return false;
+      const touchX = evt.nativeEvent.locationX;
+      return touchX >= 40 && Math.abs(gestureState.dx) > 20;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dx < 0) {
         const newTranslateX = Math.max(gestureState.dx, -ACTION_BUTTON_WIDTH * 2);
         translateX.setValue(newTranslateX);
       }
     },
     onPanResponderRelease: (evt, gestureState) => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-
-      if (isDragging) {
-        setIsDragging(false);
-        
-        const ITEM_HEIGHT = 112;
-        const moveSteps = Math.round(gestureState.dy / ITEM_HEIGHT);
-        if (moveSteps !== 0) {
-          const newIndex = index + moveSteps;
-          onReorder(index, newIndex);
-        }
-        
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
-        return;
-      }
-
       if (gestureState.dx < -SWIPE_THRESHOLD) {
         setIsSwipeOpen(true);
         Animated.spring(translateX, {
           toValue: -ACTION_BUTTON_WIDTH * 2,
-          useNativeDriver: true,
+          useNativeDriver: true
         }).start();
       } else {
         setIsSwipeOpen(false);
         Animated.spring(translateX, {
           toValue: 0,
-          useNativeDriver: true,
+          useNativeDriver: true
         }).start();
       }
-    },
+    }
   });
 
   const handleEdit = () => {
     setIsSwipeOpen(false);
     Animated.spring(translateX, {
       toValue: 0,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
     onEdit(counter);
   };
@@ -126,7 +171,7 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
             setIsSwipeOpen(false);
             Animated.spring(translateX, {
               toValue: 0,
-              useNativeDriver: true,
+              useNativeDriver: true
             }).start();
             onDelete(counter.id);
           },
@@ -159,31 +204,38 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* 背景操作按钮 */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.actionText}>delete</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-          <Text style={styles.actionText}>edit</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 计数器内容 */}
       <Animated.View
         style={[
-          styles.counterContainer,
+          styles.contentWrapper,
           {
             transform: [
               { translateX },
-              { translateY },
+              { translateY }
             ],
+            zIndex: isDragging ? 999 : 1,
           },
           isDragging && styles.dragging,
         ]}
-        {...swipePanResponder.panHandlers}
       >
-        {renderCounter()}
+        {/* 拖拽手柄 */}
+        <View {...dragPanResponder.panHandlers} style={styles.dragHandle}>
+          <Ionicons name="reorder-three" size={24} color="#666" />
+        </View>
+
+        {/* 计数器内容 */}
+        <View {...swipePanResponder.panHandlers} style={styles.counterContainer}>
+          {renderCounter()}
+        </View>
+
+        {/* 背景操作按钮 */}
+        <View style={[styles.actionsContainer, isDragging && styles.hidden]}>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.actionText}>delete</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+            <Text style={styles.actionText}>edit</Text>
+          </TouchableOpacity>
+        </View>
       </Animated.View>
     </View>
   );
@@ -191,31 +243,43 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
     marginBottom: 12,
+  },
+  contentWrapper: {
+    position: 'relative',
     overflow: 'hidden',
+    borderRadius: 12,
+    backgroundColor: '#ddd',
+    flexDirection: 'row',
+  },
+  dragHandle: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#ccc',
+  },
+  counterContainer: {
+    flex: 1,
+    zIndex: 2,
   },
   actionsContainer: {
     position: 'absolute',
     right: 0,
     top: 0,
-    bottom: 12,
+    bottom: 0,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     zIndex: 0,
   },
   editButton: {
     width: 80,
-    height: 100,
     backgroundColor: '#4CAF50',
     alignItems: 'center',
     justifyContent: 'center',
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
   },
   deleteButton: {
     width: 80,
-    height: 100,
     backgroundColor: '#F44336',
     alignItems: 'center',
     justifyContent: 'center',
@@ -225,18 +289,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  counterContainer: {
-    backgroundColor: 'transparent',
-    zIndex: 2,
-  },
   dragging: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 15,
-    backgroundColor: 'transparent',
-    zIndex: 1000,
+  },
+  hidden: {
+    opacity: 0,
   },
 });
 

@@ -49,7 +49,13 @@ export default function App() {
       >
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddPattern" component={AddPatternScreen} />
-        <Stack.Screen name="PatternDetail" component={PatternDetailScreen} />
+        <Stack.Screen 
+          name="PatternDetail" 
+          component={PatternDetailScreen}
+          options={{
+            gestureEnabled: false // 禁用右滑返回手势
+          }}
+        />
         <Stack.Screen name="EditPatternName" component={EditPatternNameScreen} />
       </Stack.Navigator>
     </NavigationContainer>
