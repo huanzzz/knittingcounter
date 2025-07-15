@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ddd',
     borderRadius: 12,
-    padding: 16,
+    padding: 13,
     marginBottom: 12,
-    minHeight: 100, // 【UI调整3】Shape计数器高度和row计数器保持一致：从120调整为100
+    minHeight: 80, // 【UI调整3】Shape计数器高度和row计数器保持一致：从100调整为80
   },
   header: {
     flexDirection: 'row',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8, // 【UI调整】加减按钮离半圆的距离
-    minHeight: 60, // 【UI调整】内容区域高度
+    minHeight: 48, // 【UI调整】内容区域高度：从60调整为48
   },
   button: {
     width: 28, // 【UI调整】按钮尺寸，比row counter小一些

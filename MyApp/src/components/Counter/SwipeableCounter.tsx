@@ -36,7 +36,7 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
 
   const SWIPE_THRESHOLD = 60;
   const ACTION_BUTTON_WIDTH = 80;
-  const ITEM_HEIGHT = 112;
+  const ITEM_HEIGHT = 72;
   const LONG_PRESS_DELAY = 200;
 
   // 拖拽手势处理
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dragHandle: {
-    width: 40,
+    width: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderRightWidth: 1,

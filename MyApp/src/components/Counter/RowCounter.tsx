@@ -66,9 +66,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ddd',
     borderRadius: 12,
-    padding: 16,
+    padding: 13,
     marginBottom: 12,
-    minHeight: 100, // 【UI调整5】减小子计数器高度：从120调整为100
+    minHeight: 80, // 【UI调整5】减小子计数器高度：从100调整为80
   },
   header: {
     flexDirection: 'row',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 50, // 【UI调整7】加减按钮离半圆更近：增大内边距让按钮往中间靠
-    minHeight: 60, // 【UI调整2】计数section整体往上：从80调整为70
+    minHeight: 48, // 【UI调整2】计数section整体往上：从60调整为48
   },
   button: {
     width: 36,
