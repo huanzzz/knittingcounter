@@ -299,36 +299,37 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
       </View>
 
       {panelState !== 'collapsed' && (
-        // 展开状态的内容区域
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.expandedContent}>
-            {/* 添加/编辑计数器界面 - 直接在框内显示 */}
-            {addMode && renderAddCounterInterface()}
-            
-            {/* 计数器列表 */}
-            {!addMode && (
-              <View style={styles.counterList}>
-                {panelState === 'expanded' ? (
-                  <ScrollView 
-                    ref={scrollViewRef}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={!isDragging}
-                    decelerationRate="normal"
-                    scrollEventThrottle={16}
-                    alwaysBounceVertical={false}
-                    contentContainerStyle={styles.scrollContent}
-                  >
-                    {counters.map((counter, index) => renderCounter(counter, index))}
-                  </ScrollView>
-                ) : (
-                  <View>
-                    {getVisibleCounters().map((counter, index) => renderCounter(counter, index))}
-                  </View>
-                )}
+        <View style={styles.expandedContent}>
+          {/* 添加/编辑计数器界面时才包裹TouchableWithoutFeedback */}
+          {addMode ? (
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View>
+                {renderAddCounterInterface()}
               </View>
-            )}
-          </View>
-        </TouchableWithoutFeedback>
+            </TouchableWithoutFeedback>
+          ) : (
+            // 计数器列表不包裹TouchableWithoutFeedback
+            <View style={styles.counterList}>
+              {panelState === 'expanded' ? (
+                <ScrollView 
+                  ref={scrollViewRef}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={!isDragging}
+                  decelerationRate="normal"
+                  scrollEventThrottle={16}
+                  alwaysBounceVertical={false}
+                  contentContainerStyle={styles.scrollContent}
+                >
+                  {counters.map((counter, index) => renderCounter(counter, index))}
+                </ScrollView>
+              ) : (
+                <View>
+                  {getVisibleCounters().map((counter, index) => renderCounter(counter, index))}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
       )}
     </Animated.View>
   );
