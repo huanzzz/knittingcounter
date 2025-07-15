@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, PanResponder, KeyboardAvoidingView, Platform } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -46,6 +46,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   
   // 初始化计数器数据
   const [counters, setCounters] = useState<Counter[]>([]);
+  const savingRef = useRef(false);
 
   // 加载计数器数据
   useEffect(() => {
@@ -79,10 +80,14 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const saveCounters = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     try {
       await CounterDB.saveCounters(id, counters);
     } catch (error) {
       console.error('Failed to save counters:', error);
+    } finally {
+      savingRef.current = false;
     }
   };
 
