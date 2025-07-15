@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { ShapeCounter as ShapeCounterType } from './CounterTypes';
 import SemiCircleProgress from './SemiCircleProgress';
 
@@ -12,6 +13,7 @@ interface ShapeCounterProps {
 
 const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, hideEdit = false }) => {
   const handleTimesIncrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
       currentTimes: counter.currentTimes + 1,
@@ -19,6 +21,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
   };
 
   const handleTimesDecrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
       currentTimes: Math.max(1, counter.currentTimes - 1), // 最小值为1
@@ -26,6 +29,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
   };
 
   const handleRowsIncrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (counter.isLinked) {
       // 连接模式：当rows达到最大值时，times自动+1，rows重置为1
       if (counter.currentRows + 1 > counter.maxRows) {
@@ -50,6 +54,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
   };
 
   const handleRowsDecrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (counter.isLinked) {
       // 连接模式：当rows为1且times>1时，times-1，rows设为最大值
       if (counter.currentRows === 1 && counter.currentTimes > 1) {
@@ -99,7 +104,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
                 currentValue={counter.currentTimes}
                 startValue={1}
                 endValue={counter.maxTimes}
-                size={80}
+                size={85}
               />
             </View>
             
@@ -110,14 +115,6 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
           </View>
           {/* 标签移到半圆下方 */}
           <Text style={styles.label}>times</Text>
-        </View>
-
-        {/* 连接线指示器 */}
-        <View style={styles.linkIndicator}>
-          <View style={[
-            styles.linkLine,
-            !counter.isLinked && styles.linkLineDisabled
-          ]} />
         </View>
 
         {/* Rows Counter */}
@@ -134,7 +131,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
                 currentValue={counter.currentRows}
                 startValue={1}
                 endValue={counter.maxRows}
-                size={80}
+                size={85}
               />
             </View>
             
@@ -157,13 +154,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 13,
     marginBottom: 12,
-    minHeight: 80, // 【UI调整3】Shape计数器高度和row计数器保持一致：从100调整为80
+    minHeight: 100, // 从80调整为100（125%）
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 0, // 【UI调整2】减小半圆和name之间的距离：从2调整为0
+    marginBottom: 8, // 从0增加到8，增加和下方内容的距离
   },
   name: {
     fontSize: 16,
@@ -179,13 +176,14 @@ const styles = StyleSheet.create({
   },
   countersRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around', // 从space-between改为space-around，更好分布
     alignItems: 'flex-start',
-    gap: 12, // 【UI调整】两个计数器之间的间距
+    gap: 20, // 从12增加到20，增加间距
   },
   counterGroup: {
     flex: 1,
     alignItems: 'center',
+    maxWidth: '45%', // 限制最大宽度，防止重叠
   },
   label: {
     fontSize: 12,
@@ -197,19 +195,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8, // 【UI调整】加减按钮离半圆的距离
-    minHeight: 48, // 【UI调整】内容区域高度：从60调整为48
+    paddingHorizontal: 4, // 从8减少到4，给按钮更多空间
+    minHeight: 60, // 从48调整为60，保持比例
   },
   button: {
-    width: 28, // 【UI调整】按钮尺寸，比row counter小一些
-    height: 28,
-    borderRadius: 14,
+    width: 28, // 从28增加到36
+    height: 28, // 从28增加到36
+    borderRadius: 18, // 从14增加到18
     backgroundColor: '#bbb',
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    fontSize: 16, // 【UI调整】按钮文字大小
+    fontSize: 20, // 从16增加到20
     color: '#222',
     fontWeight: '300',
   },
@@ -217,22 +215,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 6, // 【UI调整】半圆和按钮之间的间距
-    marginTop: -12, // 【UI调整】半圆往上挪：负数向上，正数向下
-  },
-  linkIndicator: {
-    width: 20,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  linkLine: {
-    width: '100%',
-    height: 2,
-    backgroundColor: '#666',
-  },
-  linkLineDisabled: {
-    backgroundColor: '#ddd',
+    marginHorizontal: 4, // 从6减少到4
+    marginTop: -15, // 从-12调整为-15，保持相对位置
   },
 });
 

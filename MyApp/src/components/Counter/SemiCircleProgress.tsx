@@ -28,7 +28,7 @@ const SemiCircleProgress: React.FC<SemiCircleProgressProps> = ({
   };
 
   const progress = calculateProgress();
-  const radius = size / 2 - 12; // 留出边距
+  const radius = size / 2 - 8; // 从12减少到8，增加半径
   const strokeWidth = 5;
   const centerX = size / 2;
   const centerY = size / 2;
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   centerText: {
-    fontSize: 24,
+    fontSize: 32, // 从24增加到28
     color: '#222',
     fontWeight: '400',
   },
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   valueText: {
-    fontSize: 11,
+    fontSize: 14,
     color: '#666',
     fontWeight: '400',
   },

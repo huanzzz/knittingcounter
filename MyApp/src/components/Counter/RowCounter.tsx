@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { RowCounter as RowCounterType } from './CounterTypes';
 import { Button } from '../design-system';
 import SemiCircleProgress from './SemiCircleProgress';
@@ -13,6 +14,7 @@ interface RowCounterProps {
 
 const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hideEdit = false }) => {
   const handleIncrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
       currentRow: counter.currentRow + 1,
@@ -20,6 +22,7 @@ const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hide
   };
 
   const handleDecrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
       currentRow: Math.max(0, counter.currentRow - 1),
@@ -49,7 +52,7 @@ const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hide
             currentValue={counter.currentRow}
             startValue={counter.startRow}
             endValue={counter.endRow}
-            size={100}
+            size={120}
           />
         </View>
         
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 13,
     marginBottom: 12,
-    minHeight: 80, // 【UI调整5】减小子计数器高度：从100调整为80
+    minHeight: 100, // 从80调整为100（125%）
   },
   header: {
     flexDirection: 'row',
@@ -92,19 +95,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 50, // 【UI调整7】加减按钮离半圆更近：增大内边距让按钮往中间靠
-    minHeight: 48, // 【UI调整2】计数section整体往上：从60调整为48
+    paddingHorizontal: 30, // 【UI调整7】加减按钮离半圆更近：增大内边距让按钮往中间靠
+    minHeight: 60, // 从48调整为60，保持比例
   },
   button: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44, // 从36增加到44
+    height: 44, // 从36增加到44
+    borderRadius: 22, // 从18增加到22
     backgroundColor: '#bbb',
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    fontSize: 20,
+    fontSize: 24, // 从20增加到24
     color: '#222',
     fontWeight: '300',
   },
@@ -113,7 +116,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 8, // 【UI调整1】加减按钮靠半圆近一点：从12调整为8
-    marginTop: -16, // 【UI调整6】SemiCircleProgress组件往上挪：负数向上，正数向下
+    marginTop: -20, // 从-16调整为-20，保持相对位置
   },
 });
 

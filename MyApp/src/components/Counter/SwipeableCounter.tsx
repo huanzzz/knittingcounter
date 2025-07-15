@@ -232,7 +232,7 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
       >
         {/* 拖拽手柄 */}
         <View {...dragPanResponder.panHandlers} style={styles.dragHandle}>
-          <Ionicons name="reorder-three" size={24} color="#666" />
+          <Ionicons name="reorder-three" size={20} color="white" />
         </View>
 
         {/* 计数器内容 */}
