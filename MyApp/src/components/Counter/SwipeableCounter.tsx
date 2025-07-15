@@ -34,7 +34,7 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
   const translateY = useRef(new Animated.Value(0)).current;
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const SWIPE_THRESHOLD = 100;
+  const SWIPE_THRESHOLD = 60;
   const ACTION_BUTTON_WIDTH = 80;
   const ITEM_HEIGHT = 112;
   const LONG_PRESS_DELAY = 200;
@@ -120,8 +120,7 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (evt, gestureState) => {
       if (isDragging) return false;
-      const touchX = evt.nativeEvent.locationX;
-      return touchX >= 40 && Math.abs(gestureState.dx) > 20;
+      return Math.abs(gestureState.dx) > 20;
     },
     onPanResponderMove: (evt, gestureState) => {
       if (gestureState.dx < 0) {
@@ -204,12 +203,26 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* 全屏透明遮罩，用于点击收回滑动 */}
+      {isSwipeOpen && (
+        <TouchableOpacity
+          style={styles.overlay}
+          onPress={() => {
+            setIsSwipeOpen(false);
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: true
+            }).start();
+          }}
+          activeOpacity={1}
+        />
+      )}
+      
       <Animated.View
         style={[
           styles.contentWrapper,
           {
             transform: [
-              { translateX },
               { translateY }
             ],
             zIndex: isDragging ? 999 : 1,
@@ -223,9 +236,17 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
         </View>
 
         {/* 计数器内容 */}
-        <View {...swipePanResponder.panHandlers} style={styles.counterContainer}>
+        <Animated.View 
+          {...swipePanResponder.panHandlers} 
+          style={[
+            styles.counterContainer,
+            {
+              transform: [{ translateX: translateX }]
+            }
+          ]}
+        >
           {renderCounter()}
-        </View>
+        </Animated.View>
 
         {/* 背景操作按钮 */}
         <View style={[styles.actionsContainer, isDragging && styles.hidden]}>
@@ -262,6 +283,7 @@ const styles = StyleSheet.create({
   counterContainer: {
     flex: 1,
     zIndex: 2,
+    backgroundColor: '#ddd',
   },
   actionsContainer: {
     position: 'absolute',
@@ -299,6 +321,15 @@ const styles = StyleSheet.create({
   hidden: {
     opacity: 0,
   },
+  overlay: {
+    position: 'absolute',
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    backgroundColor: 'transparent',
+    zIndex: 998,
+  },
 });
 
-export default SwipeableCounter; 
+export default SwipeableCounter;
