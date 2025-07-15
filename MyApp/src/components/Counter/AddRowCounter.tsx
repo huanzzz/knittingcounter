@@ -103,9 +103,11 @@ const AddRowCounter: React.FC<AddRowCounterProps> = ({ onAdd, onCancel }) => {
                   <TextInput
                     value={form.startRow}
                     onChangeText={handleStartRowChange}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
+                    returnKeyType="done"
                     style={styles.inputText}
                     textAlign="center"
+                    selectTextOnFocus={true}
                   />
                 </View>
               </View>
@@ -118,9 +120,11 @@ const AddRowCounter: React.FC<AddRowCounterProps> = ({ onAdd, onCancel }) => {
                   <TextInput
                     value={form.endRow}
                     onChangeText={handleEndRowChange}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
+                    returnKeyType="done"
                     style={styles.inputText}
                     textAlign="center"
+                    selectTextOnFocus={true}
                   />
                 </View>
               </View>
@@ -137,7 +141,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 0,
-    maxHeight: 300,
     marginTop: -10,
   },
   header: {
@@ -204,6 +207,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#333',
     fontWeight: '400',
+    width: '100%',
+    height: '100%',
   },
   inputRow: {
     flexDirection: 'row',

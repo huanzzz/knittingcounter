@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, PanResponder, KeyboardAvoidingView, Platform } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import CounterPanel from '../components/Counter/CounterPanel';
@@ -171,60 +171,66 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 顶部导航 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
-          <Text style={styles.closeIcon}>×</Text>
-        </TouchableOpacity>
-        
-        {/* 标签导航 */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'pattern' && styles.activeTab]}
-            onPress={() => setActiveTab('pattern')}
-          >
-            <Text style={[styles.tabText, activeTab === 'pattern' && styles.activeTabText]}>
-              pattern
-            </Text>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={styles.innerContainer}>
+        {/* 顶部导航 */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
+            <Text style={styles.closeIcon}>×</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'pics' && styles.activeTab]}
-            onPress={() => setActiveTab('pics')}
-          >
-            <Text style={[styles.tabText, activeTab === 'pics' && styles.activeTabText]}>
-              pics
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'note' && styles.activeTab]}
-            onPress={() => setActiveTab('note')}
-          >
-            <Text style={[styles.tabText, activeTab === 'note' && styles.activeTabText]}>
-              note
-            </Text>
-          </TouchableOpacity>
+          {/* 标签导航 */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'pattern' && styles.activeTab]}
+              onPress={() => setActiveTab('pattern')}
+            >
+              <Text style={[styles.tabText, activeTab === 'pattern' && styles.activeTabText]}>
+                pattern
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'pics' && styles.activeTab]}
+              onPress={() => setActiveTab('pics')}
+            >
+              <Text style={[styles.tabText, activeTab === 'pics' && styles.activeTabText]}>
+                pics
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'note' && styles.activeTab]}
+              onPress={() => setActiveTab('note')}
+            >
+              <Text style={[styles.tabText, activeTab === 'note' && styles.activeTabText]}>
+                note
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* 内容区域 */}
-      <View style={styles.content}>
-        {renderTabContent()}
-      </View>
+        {/* 内容区域 */}
+        <View style={styles.content}>
+          {renderTabContent()}
+        </View>
 
-      {/* 计数器面板 */}
-      <CounterPanel
-        counters={counters}
-        panelState={counterPanelState}
-        onPanelStateChange={setCounterPanelState}
-        onCounterUpdate={handleCounterUpdate}
-        onCounterAdd={handleCounterAdd}
-        onCounterDelete={handleCounterDelete}
-        onCounterReorder={handleCounterReorder}
-      />
-    </View>
+        {/* 计数器面板 */}
+        <CounterPanel
+          counters={counters}
+          panelState={counterPanelState}
+          onPanelStateChange={setCounterPanelState}
+          onCounterUpdate={handleCounterUpdate}
+          onCounterAdd={handleCounterAdd}
+          onCounterDelete={handleCounterDelete}
+          onCounterReorder={handleCounterReorder}
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -232,6 +238,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  innerContainer: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

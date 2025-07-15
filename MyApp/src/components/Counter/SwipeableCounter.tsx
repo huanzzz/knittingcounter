@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -1000,
     left: -1000,
-    right: -1000,
+    right: 160, // 不覆盖操作按钮区域 (每个按钮80px宽度，两个按钮共160px)
     bottom: -1000,
     backgroundColor: 'transparent',
     zIndex: 998,

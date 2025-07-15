@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Input, Button } from '../design-system';
 import { AddShapeCounterForm, ShapeCounter } from './CounterTypes';
 
@@ -67,78 +67,84 @@ const AddShapeCounter: React.FC<AddShapeCounterProps> = ({ onAdd, onCancel }) =>
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
-          <Text style={styles.closeText}>×</Text>
-        </TouchableOpacity>
-        
-        <Button
-          variant="primary"
-          size="small"
-          title="add"
-          onPress={handleAdd}
-          style={styles.addBtn}
-        />
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.nameSection}>
-          <Input
-            variant="underline"
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
+            <Text style={styles.closeText}>×</Text>
+          </TouchableOpacity>
+          
+          <Button
+            variant="primary"
             size="small"
-            value={form.name}
-            onChangeText={(value) => setForm(prev => ({ ...prev, name: value }))}
-            placeholder="name"
-            keyboardType="default"
-            style={styles.nameInput}
+            title="add"
+            onPress={handleAdd}
+            style={styles.addBtn}
           />
         </View>
 
-        <View style={styles.valuesSection}>
-          <View style={styles.valueGroup}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>times</Text>
-              <View style={styles.valueInput}>
-                <TextInput
-                  value={form.times}
-                  onChangeText={handleTimesChange}
-                  keyboardType="numeric"
-                  style={styles.inputText}
-                  textAlign="center"
-                />
-              </View>
-            </View>
+        <View style={styles.form}>
+          <View style={styles.nameSection}>
+            <Input
+              variant="underline"
+              size="small"
+              value={form.name}
+              onChangeText={(value) => setForm(prev => ({ ...prev, name: value }))}
+              placeholder="name"
+              keyboardType="default"
+              style={styles.nameInput}
+            />
           </View>
 
-          {/* 连接线 */}
-          <TouchableOpacity onPress={toggleLinked} style={styles.linkContainer}>
-            <View style={[styles.linkLine, !form.isLinked && styles.linkLineDisconnected]}>
-              {form.isLinked ? (
-                <View style={styles.linkDot} />
-              ) : (
-                <View style={styles.linkBreak} />
-              )}
+          <View style={styles.valuesSection}>
+            <View style={styles.valueGroup}>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>times</Text>
+                <View style={styles.valueInput}>
+                  <TextInput
+                    value={form.times}
+                    onChangeText={handleTimesChange}
+                    keyboardType="number-pad"
+                    returnKeyType="done"
+                    style={styles.inputText}
+                    textAlign="center"
+                    selectTextOnFocus={true}
+                  />
+                </View>
+              </View>
             </View>
-          </TouchableOpacity>
 
-          <View style={styles.valueGroup}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>rows</Text>
-              <View style={styles.valueInput}>
-                <TextInput
-                  value={form.rows}
-                  onChangeText={handleRowsChange}
-                  keyboardType="numeric"
-                  style={styles.inputText}
-                  textAlign="center"
-                />
+            {/* 连接线 */}
+            <TouchableOpacity onPress={toggleLinked} style={styles.linkContainer}>
+              <View style={[styles.linkLine, !form.isLinked && styles.linkLineDisconnected]}>
+                {form.isLinked ? (
+                  <View style={styles.linkDot} />
+                ) : (
+                  <View style={styles.linkBreak} />
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.valueGroup}>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>rows</Text>
+                <View style={styles.valueInput}>
+                  <TextInput
+                    value={form.rows}
+                    onChangeText={handleRowsChange}
+                    keyboardType="number-pad"
+                    returnKeyType="done"
+                    style={styles.inputText}
+                    textAlign="center"
+                    selectTextOnFocus={true}
+                  />
+                </View>
               </View>
             </View>
           </View>
         </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -147,7 +153,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 0,
-    maxHeight: 350,
     marginTop: -10,
   },
   header: {
@@ -218,6 +223,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#333',
     fontWeight: '400',
+    width: '100%',
+    height: '100%',
   },
   linkContainer: {
     alignItems: 'center',
