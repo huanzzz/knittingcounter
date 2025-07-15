@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, PanResponder, Dimensions, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, PanResponder, Dimensions, TouchableWithoutFeedback, Keyboard, Animated } from 'react-native';
 import { CounterPanelProps, CounterPanelState, Counter, AddCounterMode } from './CounterTypes';
 import RowCounter from './RowCounter';
 import ShapeCounter from './ShapeCounter';
@@ -26,6 +26,9 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // 添加动画高度值
+  const animatedHeight = useRef(new Animated.Value(80)).current;
 
   const SCROLL_EDGE_THRESHOLD = 100; // 触发自动滚动的边缘距离
   const SCROLL_SPEED = 5; // 自动滚动速度
@@ -94,6 +97,16 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
     };
   }, []);
 
+  // 监听panelState变化，触发高度动画
+  useEffect(() => {
+    const targetHeight = getPanelHeight();
+    Animated.timing(animatedHeight, {
+      toValue: targetHeight,
+      duration: 300, // 300ms的动画时长
+      useNativeDriver: false, // 高度动画不能使用原生驱动
+    }).start();
+  }, [panelState]);
+
   const getVisibleCounters = () => {
     switch (panelState) {
       case 'collapsed':
@@ -110,13 +123,13 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   const getPanelHeight = () => {
     switch (panelState) {
       case 'collapsed':
-        return 60;
+        return 80; // 从60增加到80，避免与系统底部交互冲突
       case 'partial':
-        return 180;
+        return 225; // 从180增加到225（125%），提供更多展示空间
       case 'expanded':
         return Math.min(450, screenHeight * 0.5);
       default:
-        return 60;
+        return 80; // 也相应调整默认值
     }
   };
 
@@ -145,6 +158,13 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
         }
       }
     },
+  });
+
+  // 添加按钮专用的PanResponder，阻止拖拽手势
+  const addButtonPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => false,
+    onPanResponderTerminationRequest: () => false,
   });
 
   const handleCounterEdit = (counter: Counter) => {
@@ -249,30 +269,37 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   };
 
   return (
-    <View style={[styles.container, { height: getPanelHeight() }]}>
-      {/* 拖拽手柄 */}
-      <View {...panResponder.panHandlers} style={styles.handle}>
-        <View style={styles.handleBar} />
-        {/* 添加计数器按钮 - 只在非添加模式时显示 */}
-        {panelState !== 'collapsed' && !addMode && (
+    <Animated.View style={[styles.container, { height: animatedHeight }]}>
+      {/* 扩大的交互区域 - 覆盖整个顶部 */}
+      <View {...panResponder.panHandlers} style={styles.interactiveArea}>
+        {panelState === 'collapsed' ? (
+          // 完全收起状态 - 只显示手柄条，整个区域可点击展开
           <TouchableOpacity 
-            style={styles.addBtn} 
-            onPress={handleAddCounter}
+            onPress={() => onPanelStateChange('partial')} 
+            style={styles.collapsedHeader}
           >
-            <Text style={styles.addBtnText}>+</Text>
+            <View style={styles.handleBar} />
           </TouchableOpacity>
+        ) : (
+          // 展开状态 - 显示手柄和添加按钮
+          <View style={styles.handle}>
+            <View style={styles.handleBar} />
+            {/* 添加计数器按钮 - 只在非添加模式时显示 */}
+            {!addMode && (
+              <TouchableOpacity 
+                {...addButtonPanResponder.panHandlers}
+                style={styles.addBtn} 
+                onPress={handleAddCounter}
+              >
+                <Text style={styles.addBtnText}>+</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
 
-      {panelState === 'collapsed' ? (
-        // 完全收起状态
-        <View style={styles.collapsedContent}>
-          <TouchableOpacity onPress={() => onPanelStateChange('partial')}>
-            <Text style={styles.expandIcon}>∧</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        // 展开状态
+      {panelState !== 'collapsed' && (
+        // 展开状态的内容区域
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.expandedContent}>
             {/* 添加/编辑计数器界面 - 直接在框内显示 */}
@@ -303,7 +330,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
           </View>
         </TouchableWithoutFeedback>
       )}
-    </View>
+    </Animated.View>
   );
 };
 
@@ -322,10 +349,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  interactiveArea: {
+    // 扩大交互区域，覆盖顶部更大的范围
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    alignItems: 'center',
+    position: 'relative',
+    minHeight: 48, // 确保有足够的交互区域
+  },
   handle: {
     alignItems: 'center',
     paddingVertical: 12,
     position: 'relative',
+    width: '100%',
   },
   handleBar: {
     width: 40,
@@ -356,10 +392,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  expandIcon: {
-    fontSize: 24,
-    color: '#666',
-  },
   expandedContent: {
     flex: 1,
     paddingHorizontal: 16,
@@ -371,6 +403,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,  // 添加底部内边距
+  },
+  collapsedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
+    position: 'relative',
   },
 });
 
