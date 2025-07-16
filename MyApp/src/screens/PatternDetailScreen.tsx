@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, PanResponder, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { 
+  GestureHandlerRootView, 
+  PinchGestureHandler, 
+  PanGestureHandler,
+  PinchGestureHandlerEventPayload,
+  PanGestureHandlerEventPayload,
+  GestureEvent
+} from 'react-native-gesture-handler';
+import Animated, { 
+  useAnimatedGestureHandler, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  runOnJS
+} from 'react-native-reanimated';
 import CounterPanel from '../components/Counter/CounterPanel';
 import { Counter, CounterPanelState } from '../components/Counter/CounterTypes';
 import PicsContent from '../components/PicsContent';
@@ -38,11 +53,109 @@ const COUNTER_PANEL_HEIGHT = 120; // CounterPanel 高度
 const SAFE_AREA_BOTTOM = 38; // 底部安全区高度
 const CONTENT_HEIGHT = screenHeight - HEADER_HEIGHT - COUNTER_PANEL_HEIGHT + SAFE_AREA_BOTTOM;
 
+type PinchContext = {
+  startScale: number;
+};
+
+type PanContext = {
+  startX: number;
+  startY: number;
+};
+
+type SwipeContext = {
+  startX: number;
+};
+
 const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { id, images, projectName, needleSize } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>('pattern');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [counterPanelState, setCounterPanelState] = useState<CounterPanelState>('partial');
+  
+  // 缩放相关的动画值
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  // 缩放手势处理
+  const pinchHandler = useAnimatedGestureHandler<GestureEvent<PinchGestureHandlerEventPayload>, PinchContext>({
+    onStart: (_, context) => {
+      context.startScale = scale.value;
+    },
+    onActive: (event, context) => {
+      // 限制最大缩放比例为3倍
+      const newScale = Math.min(context.startScale * event.scale, 3);
+      const previousScale = scale.value;
+      scale.value = Math.max(1, newScale);
+      
+      // 如果缩放回到1，自动居中
+      if (previousScale > 1 && scale.value === 1) {
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+    },
+    onEnd: () => {
+      if (scale.value < 1) {
+        scale.value = withSpring(1);
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+      savedScale.value = scale.value;
+    },
+  });
+
+  // 平移手势处理
+  const panHandler = useAnimatedGestureHandler<GestureEvent<PanGestureHandlerEventPayload>, PanContext>({
+    onStart: (_, context) => {
+      context.startX = translateX.value;
+      context.startY = translateY.value;
+    },
+    onActive: (event, context) => {
+      if (scale.value > 1) {
+        // 计算最大可移动距离
+        const maxX = (screenWidth * (scale.value - 1)) / 2;
+        const maxY = (screenHeight * 0.8 * (scale.value - 1)) / 2;
+
+        // 计算新的位置
+        let newX = context.startX + event.translationX;
+        let newY = context.startY + event.translationY;
+
+        // 限制在边界内
+        newX = Math.min(Math.max(newX, -maxX), maxX);
+        newY = Math.min(Math.max(newY, -maxY), maxY);
+
+        translateX.value = newX;
+        translateY.value = newY;
+      } else {
+        // 如果缩放比例为1，强制居中
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+    },
+    onEnd: () => {
+      if (scale.value === 1) {
+        // 如果缩放比例为1，确保图片居中
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    },
+  });
+
+  // 动画样式
+  const animatedImageStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    };
+  });
   
   // 初始化计数器数据
   const [counters, setCounters] = useState<Counter[]>([]);
@@ -91,21 +204,25 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  // 图片轮播的PanResponder
-  const imagePanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return Math.abs(gestureState.dx) > 10;
+  // 滑动切换图片手势处理
+  const swipeHandler = useAnimatedGestureHandler<GestureEvent<PanGestureHandlerEventPayload>, SwipeContext>({
+    onStart: (_, context) => {
+      context.startX = translateX.value;
     },
-    onPanResponderRelease: (evt, gestureState) => {
-      const { dx } = gestureState;
-      
-      if (dx > 50 && currentImageIndex > 0) {
-        // 向右滑动，上一张
-        setCurrentImageIndex(currentImageIndex - 1);
-      } else if (dx < -50 && currentImageIndex < images.length - 1) {
-        // 向左滑动，下一张
-        setCurrentImageIndex(currentImageIndex + 1);
+    onActive: (event, context) => {
+      if (scale.value <= 1) {
+        translateX.value = context.startX + event.translationX;
+      }
+    },
+    onEnd: (event) => {
+      if (scale.value <= 1) {
+        const swipeThreshold = 50;
+        if (event.translationX > swipeThreshold && currentImageIndex > 0) {
+          runOnJS(setCurrentImageIndex)(currentImageIndex - 1);
+        } else if (event.translationX < -swipeThreshold && currentImageIndex < images.length - 1) {
+          runOnJS(setCurrentImageIndex)(currentImageIndex + 1);
+        }
+        translateX.value = withSpring(0);
       }
     },
   });
@@ -154,13 +271,23 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
             
             {/* 图片轮播 */}
-            <View {...imagePanResponder.panHandlers} style={styles.imageContainer}>
-              <Image 
-                source={{ uri: images[currentImageIndex] }} 
-                style={styles.patternImage}
-                resizeMode="contain"
-              />
-            </View>
+            <GestureHandlerRootView style={styles.imageContainer}>
+              <PanGestureHandler onGestureEvent={swipeHandler}>
+                <Animated.View style={styles.imageContainer}>
+                  <PanGestureHandler onGestureEvent={panHandler}>
+                    <Animated.View style={styles.imageContainer}>
+                      <PinchGestureHandler onGestureEvent={pinchHandler}>
+                        <Animated.Image 
+                          source={{ uri: images[currentImageIndex] }} 
+                          style={[styles.patternImage, animatedImageStyle]}
+                          resizeMode="contain"
+                        />
+                      </PinchGestureHandler>
+                    </Animated.View>
+                  </PanGestureHandler>
+                </Animated.View>
+              </PanGestureHandler>
+            </GestureHandlerRootView>
           </View>
         );
       
@@ -318,6 +445,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   patternImage: {
     width: screenWidth,
