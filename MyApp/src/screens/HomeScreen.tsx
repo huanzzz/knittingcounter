@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { Pattern } from '../types/Pattern';
@@ -28,6 +28,7 @@ type Props = {
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [loading, setLoading] = useState(true);
+  const [longPressedId, setLongPressedId] = useState<string | null>(null);
 
   // 每次页面获得焦点时重新加载数据
   useFocusEffect(
@@ -50,6 +51,43 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  const handleLongPress = (id: string) => {
+    setLongPressedId(id);
+  };
+
+  const handleCancelLongPress = () => {
+    setLongPressedId(null);
+  };
+
+  const handleDeletePress = (id: string) => {
+    Alert.alert(
+      '',
+      'sure?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: handleCancelLongPress,
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await PatternStorage.delete(id);
+              await loadPatterns();
+              handleCancelLongPress();
+            } catch (error) {
+              console.error('Failed to delete pattern:', error);
+              Alert.alert('Error', 'Failed to delete pattern');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -58,8 +96,70 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     );
   }
 
+  const renderPattern = ({ item }: { item: Pattern }) => {
+    const isLongPressed = item.id === longPressedId;
+
+    const handleCardPress = () => {
+      if (longPressedId) {
+        // 如果有任何菜单打开，只取消菜单，不执行其他操作
+        handleCancelLongPress();
+        return;
+      }
+      // 只有在没有菜单打开的情况下，才导航到详情页面
+      navigation.navigate('PatternDetail', {
+        id: item.id,
+        images: item.images,
+        projectName: item.projectName,
+        needleSize: item.needleSize
+      });
+    };
+
+    return (
+      <TouchableOpacity 
+        style={[styles.card, isLongPressed && styles.cardPressed]} 
+        onPress={handleCardPress}
+        onLongPress={() => handleLongPress(item.id)}
+        delayLongPress={500}
+      >
+        <Image 
+          source={{ uri: item.images[0] }} 
+          style={styles.cover}
+        />
+        <Text style={styles.cardTitle}>{item.name}</Text>
+        
+        {isLongPressed && (
+          <TouchableOpacity 
+            style={styles.menuOverlay}
+            activeOpacity={1}
+            onPress={handleCancelLongPress}
+          >
+            <TouchableOpacity 
+              style={styles.menuButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleDeletePress(item.id);
+              }}
+            >
+              <Text style={styles.menuButtonTextDelete}>delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.menuButton}
+              onPress={handleCancelLongPress}
+            >
+              <Text style={styles.menuButtonText}>cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container}
+      activeOpacity={1}
+      onPress={handleCancelLongPress}
+    >
       <FlatList
         data={patterns}
         keyExtractor={item => item.id}
@@ -71,23 +171,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.emptySubText}>点击底部按钮添加新图解</Text>
           </View>
         )}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.card} 
-            onPress={() => navigation.navigate('PatternDetail', {
-              id: item.id,
-              images: item.images,
-              projectName: item.projectName,
-              needleSize: item.needleSize
-            })}
-          >
-            <Image 
-              source={{ uri: item.images[0] }} 
-              style={styles.cover}
-            />
-            <Text style={styles.cardTitle}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
+        renderItem={renderPattern}
       />
       <View style={styles.addPatternBar}>
         <TouchableOpacity 
@@ -100,7 +184,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -148,6 +232,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    position: 'relative',
+  },
+  cardPressed: {
+    opacity: 0.8,
   },
   cover: {
     width: 120,
@@ -160,6 +248,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     marginTop: 4,
+  },
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  menuButton: {
+    width: '100%',
+    paddingVertical: 12,
+    marginVertical: 4,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  menuButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  menuButtonTextDelete: {
+    fontSize: 16,
+    color: '#ff3b30',
   },
   addPatternBar: {
     position: 'absolute',
