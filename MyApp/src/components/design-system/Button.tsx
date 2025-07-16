@@ -1,5 +1,5 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { TouchableWithoutFeedback, Text, StyleSheet, ActivityIndicator, Animated, TouchableOpacity } from 'react-native';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'text';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -23,12 +23,66 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
 }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = () => {
+    if (variant !== 'text') {
+      Animated.spring(animatedValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }).start();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (variant !== 'text') {
+      Animated.spring(animatedValue, {
+        toValue: 0,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }).start();
+    }
+  };
+
+  const animatedStyle = variant !== 'text' ? {
+    transform: [
+      {
+        translateY: animatedValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-4, 0],
+        }),
+      },
+    ],
+  } : {};
+
+  if (variant === 'text') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[styles.text, style]}
+      >
+        <Text style={[
+          styles.textText,
+          styles[`${size}Text`],
+          disabled && styles.disabledText
+        ]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
   const buttonStyle = [
     styles.base,
     styles[variant],
     styles[size],
     disabled && styles.disabled,
     style,
+    animatedStyle,
   ];
 
   const textStyle = [
@@ -39,18 +93,20 @@ const Button: React.FC<ButtonProps> = ({
   ];
 
   return (
-    <TouchableOpacity
-      style={buttonStyle}
+    <TouchableWithoutFeedback
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
     >
-      {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#222' : '#222'} size="small" />
-      ) : (
-        <Text style={textStyle}>{title}</Text>
-      )}
-    </TouchableOpacity>
+      <Animated.View style={buttonStyle}>
+        {loading ? (
+          <ActivityIndicator color={variant === 'primary' ? '#fff' : '#222'} size="small" />
+        ) : (
+          <Text style={textStyle}>{title}</Text>
+        )}
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -58,12 +114,12 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 30,
   },
   
   // Variants
   primary: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#196EDD',
   },
   secondary: {
     backgroundColor: '#ddd',
@@ -72,6 +128,14 @@ const styles = StyleSheet.create({
   },
   text: {
     backgroundColor: 'transparent',
+    shadowColor: 'transparent',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   
   // Sizes
@@ -80,12 +144,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   medium: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 24,
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 3,
+      height: 4,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   large: {
-    paddingVertical: 20,
+    paddingVertical: 14,
     paddingHorizontal: 32,
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 3,
+      height: 4,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   
   // States
@@ -100,16 +180,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   primaryText: {
-    color: '#222',
-    fontSize: 20,
+    color: '#fff',
+    fontSize: 18,
   },
   secondaryText: {
     color: '#222',
-    fontSize: 20,
+    fontSize: 18,
   },
   textText: {
-    color: '#222',
-    fontSize: 20,
+    color: '#6E3A15',
+    fontSize: 18,
   },
   
   // Text sizes
@@ -117,10 +197,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   mediumText: {
-    fontSize: 20,
+    fontSize: 18,
   },
   largeText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   
   disabledText: {

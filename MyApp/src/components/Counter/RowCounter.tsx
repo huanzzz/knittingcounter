@@ -99,16 +99,24 @@ const styles = StyleSheet.create({
     minHeight: 60, // 从48调整为60，保持比例
   },
   button: {
-    width: 44, // 从36增加到44
-    height: 44, // 从36增加到44
-    borderRadius: 22, // 从18增加到22
-    backgroundColor: '#bbb',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#196EDD',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 2,
+      height: 1,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   buttonText: {
-    fontSize: 24, // 从20增加到24
-    color: '#222',
+    fontSize: 24,
+    color: '#fff',
     fontWeight: '300',
   },
   progressContainer: {

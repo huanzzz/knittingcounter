@@ -355,9 +355,13 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* 确认按钮 */}
-        <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmImages}>
-          <Text style={styles.confirmBtnText}>add</Text>
-        </TouchableOpacity>
+        <Button
+          title="add"
+          onPress={handleConfirmImages}
+          variant="primary"
+          size="large"
+          style={styles.confirmBtn}
+        />
       </View>
     );
   }
@@ -567,11 +571,8 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   confirmBtn: {
-    backgroundColor: '#aaa',
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: 'center',
     marginBottom: 20,
+    width: '100%',
   },
   confirmBtnText: {
     fontSize: 20,
