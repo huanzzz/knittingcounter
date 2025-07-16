@@ -149,13 +149,13 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeText: {
-    fontSize: 22,
+    fontSize: 30,
     color: '#666',
     fontWeight: '300',
   },

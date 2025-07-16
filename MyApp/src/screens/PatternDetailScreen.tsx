@@ -384,6 +384,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 16,
     paddingBottom: 16,
+    height: HEADER_HEIGHT, // 确保总高度不变
   },
   backBtn: {
     marginRight: 16,
@@ -391,6 +392,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 8, // 添加上边距
   },
   closeIcon: {
     fontSize: 32,
@@ -401,23 +403,28 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     flex: 1,
+    marginTop: 8,
+    alignItems: 'center', // 确保垂直居中
   },
   tab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
     marginRight: 16,
+    height: 40, // 固定高度
+    justifyContent: 'center', // 文字垂直居中
   },
   activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#222',
+    // 移除下划线样式
   },
   tabText: {
     fontSize: 18,
     color: '#999',
+    includeFontPadding: false, // 移除字体默认的内边距
+    textAlignVertical: 'center', // 文字垂直居中
   },
   activeTabText: {
     color: '#222',
-    fontWeight: '500',
+    fontWeight: '600',
+    includeFontPadding: false, // 移除字体默认的内边距
   },
   content: {
     height: CONTENT_HEIGHT,
