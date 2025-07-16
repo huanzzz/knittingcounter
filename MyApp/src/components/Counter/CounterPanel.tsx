@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, PanResponder, Dimensions, TouchableWithoutFeedback, Keyboard, Animated } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { CounterPanelProps, CounterPanelState, Counter, AddCounterMode } from './CounterTypes';
 import RowCounter from './RowCounter';
 import ShapeCounter from './ShapeCounter';
@@ -270,67 +271,70 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
 
   return (
     <Animated.View style={[styles.container, { height: animatedHeight }]}>
-      {/* 扩大的交互区域 - 覆盖整个顶部 */}
-      <View {...panResponder.panHandlers} style={styles.interactiveArea}>
-        {panelState === 'collapsed' ? (
-          // 完全收起状态 - 只显示手柄条，整个区域可点击展开
-          <TouchableOpacity 
-            onPress={() => onPanelStateChange('partial')} 
-            style={styles.collapsedHeader}
-          >
-            <View style={styles.handleBar} />
-          </TouchableOpacity>
-        ) : (
-          // 展开状态 - 显示手柄和添加按钮
-          <View style={styles.handle}>
-            <View style={styles.handleBar} />
-            {/* 添加计数器按钮 - 只在非添加模式时显示 */}
-            {!addMode && (
-              <TouchableOpacity 
-                {...addButtonPanResponder.panHandlers}
-                style={styles.addBtn} 
-                onPress={handleAddCounter}
-              >
-                <Text style={styles.addBtnText}>+</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </View>
-
-      {panelState !== 'collapsed' && (
-        <View style={styles.expandedContent}>
-          {/* 添加/编辑计数器界面时才包裹TouchableWithoutFeedback */}
-          {addMode ? (
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View>
-                {renderAddCounterInterface()}
-              </View>
-            </TouchableWithoutFeedback>
+      <BlurView intensity={50} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={styles.content}>
+        {/* 扩大的交互区域 - 覆盖整个顶部 */}
+        <View {...panResponder.panHandlers} style={styles.interactiveArea}>
+          {panelState === 'collapsed' ? (
+            // 完全收起状态 - 只显示手柄条，整个区域可点击展开
+            <TouchableOpacity 
+              onPress={() => onPanelStateChange('partial')} 
+              style={styles.collapsedHeader}
+            >
+              <View style={styles.handleBar} />
+            </TouchableOpacity>
           ) : (
-            // 计数器列表不包裹TouchableWithoutFeedback
-            <View style={styles.counterList}>
-              {panelState === 'expanded' ? (
-                <ScrollView 
-                  ref={scrollViewRef}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={!isDragging}
-                  decelerationRate="normal"
-                  scrollEventThrottle={16}
-                  alwaysBounceVertical={false}
-                  contentContainerStyle={styles.scrollContent}
+            // 展开状态 - 显示手柄和添加按钮
+            <View style={styles.handle}>
+              <View style={styles.handleBar} />
+              {/* 添加计数器按钮 - 只在非添加模式时显示 */}
+              {!addMode && (
+                <TouchableOpacity 
+                  {...addButtonPanResponder.panHandlers}
+                  style={styles.addBtn} 
+                  onPress={handleAddCounter}
                 >
-                  {counters.map((counter, index) => renderCounter(counter, index))}
-                </ScrollView>
-              ) : (
-                <View>
-                  {getVisibleCounters().map((counter, index) => renderCounter(counter, index))}
-                </View>
+                  <Text style={styles.addBtnText}>+</Text>
+                </TouchableOpacity>
               )}
             </View>
           )}
         </View>
-      )}
+
+        {panelState !== 'collapsed' && (
+          <View style={styles.expandedContent}>
+            {/* 添加/编辑计数器界面时才包裹TouchableWithoutFeedback */}
+            {addMode ? (
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View>
+                  {renderAddCounterInterface()}
+                </View>
+              </TouchableWithoutFeedback>
+            ) : (
+              // 计数器列表不包裹TouchableWithoutFeedback
+              <View style={styles.counterList}>
+                {panelState === 'expanded' ? (
+                  <ScrollView 
+                    ref={scrollViewRef}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={!isDragging}
+                    decelerationRate="normal"
+                    scrollEventThrottle={16}
+                    alwaysBounceVertical={false}
+                    contentContainerStyle={styles.scrollContent}
+                  >
+                    {counters.map((counter, index) => renderCounter(counter, index))}
+                  </ScrollView>
+                ) : (
+                  <View>
+                    {getVisibleCounters().map((counter, index) => renderCounter(counter, index))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+      </View>
     </Animated.View>
   );
 };
@@ -341,7 +345,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
@@ -349,6 +352,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    overflow: 'hidden', // 确保毛玻璃效果不会超出圆角边界
+  },
+  content: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)', // 添加一个半透明背景，增强可读性
   },
   interactiveArea: {
     // 扩大交互区域，覆盖顶部更大的范围
