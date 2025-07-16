@@ -1,18 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableWithoutFeedback, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { RowCounter as RowCounterType } from './CounterTypes';
-import { Button } from '../design-system';
 import SemiCircleProgress from './SemiCircleProgress';
+import { CounterType } from './CounterTypes';
 
 interface RowCounterProps {
-  counter: RowCounterType;
-  onUpdate: (counter: RowCounterType) => void;
-  onEdit: () => void;
-  hideEdit?: boolean; // 新增：控制是否隐藏编辑按钮
+  counter: CounterType;
+  onUpdate: (counter: CounterType) => void;
+  onEdit?: () => void;
+  hideEdit?: boolean;
 }
 
 const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hideEdit = false }) => {
+  const decrementAnimation = useRef(new Animated.Value(0)).current;
+  const incrementAnimation = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = (animation: Animated.Value) => {
+    Animated.spring(animation, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = (animation: Animated.Value) => {
+    Animated.spring(animation, {
+      toValue: 0,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
   const handleIncrement = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
@@ -29,22 +49,39 @@ const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hide
     });
   };
 
+  const getAnimatedStyle = (animation: Animated.Value) => ({
+    transform: [
+      {
+        scale: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 0.80],
+        }),
+      },
+    ],
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.name}>{counter.name || 'row counter'}</Text>
         {!hideEdit && (
-          <TouchableOpacity onPress={onEdit} style={styles.editBtn}>
+          <TouchableWithoutFeedback onPress={onEdit} style={styles.editBtn}>
             <Text style={styles.editText}>edit</Text>
-          </TouchableOpacity>
+          </TouchableWithoutFeedback>
         )}
       </View>
       
       <View style={styles.content}>
         {/* 左侧减号按钮 */}
-        <TouchableOpacity style={styles.button} onPress={handleDecrement}>
-          <Text style={styles.buttonText}>−</Text>
-        </TouchableOpacity>
+        <TouchableWithoutFeedback 
+          onPressIn={() => handlePressIn(decrementAnimation)}
+          onPressOut={() => handlePressOut(decrementAnimation)}
+          onPress={handleDecrement}
+        >
+          <Animated.View style={[styles.button, getAnimatedStyle(decrementAnimation)]}>
+            <Text style={styles.buttonText}>−</Text>
+          </Animated.View>
+        </TouchableWithoutFeedback>
         
         {/* 中间半圆进度条 */}
         <View style={styles.progressContainer}>
@@ -57,9 +94,15 @@ const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hide
         </View>
         
         {/* 右侧加号按钮 */}
-        <TouchableOpacity style={styles.button} onPress={handleIncrement}>
-          <Text style={styles.buttonText}>+</Text>
-        </TouchableOpacity>
+        <TouchableWithoutFeedback 
+          onPressIn={() => handlePressIn(incrementAnimation)}
+          onPressOut={() => handlePressOut(incrementAnimation)}
+          onPress={handleIncrement}
+        >
+          <Animated.View style={[styles.button, getAnimatedStyle(incrementAnimation)]}>
+            <Text style={styles.buttonText}>+</Text>
+          </Animated.View>
+        </TouchableWithoutFeedback>
       </View>
     </View>
   );
@@ -67,7 +110,7 @@ const RowCounter: React.FC<RowCounterProps> = ({ counter, onUpdate, onEdit, hide
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ddd',
+    backgroundColor: 'transparent',
     borderRadius: 12,
     padding: 13,
     marginBottom: 12,
@@ -80,8 +123,8 @@ const styles = StyleSheet.create({
     marginBottom: 2, // 【UI调整2】减小和name之间的距离：从8调整为4
   },
   name: {
-    fontSize: 16,
-    color: '#222',
+    fontSize: 14,
+    color: '#5D5D5D',
     fontWeight: '500',
   },
   editBtn: {

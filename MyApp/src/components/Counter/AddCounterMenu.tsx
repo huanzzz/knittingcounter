@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Button } from '../design-system';
 
 interface AddCounterMenuProps {
   onSelectRowCounter: () => void;
@@ -21,13 +22,21 @@ const AddCounterMenu: React.FC<AddCounterMenuProps> = ({
       </View>
       
       <View style={styles.menuItems}>
-        <TouchableOpacity style={styles.menuItem} onPress={onSelectRowCounter}>
-          <Text style={styles.menuText}>+ row counter</Text>
-        </TouchableOpacity>
+        <Button
+          title="+ row counter"
+          onPress={onSelectRowCounter}
+          variant="primary"
+          size="medium"
+          style={styles.menuItem}
+        />
         
-        <TouchableOpacity style={styles.menuItem} onPress={onSelectShapeCounter}>
-          <Text style={styles.menuText}>+ shape counter</Text>
-        </TouchableOpacity>
+        <Button
+          title="+ shape counter"
+          onPress={onSelectShapeCounter}
+          variant="primary"
+          size="medium"
+          style={styles.menuItem}
+        />
       </View>
     </View>
   );
@@ -60,20 +69,12 @@ const styles = StyleSheet.create({
     fontWeight: '300',
   },
   menuItems: {
-    gap: 8,
+    gap: 16,
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
   menuItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
+    width: '100%',
   },
 });
 

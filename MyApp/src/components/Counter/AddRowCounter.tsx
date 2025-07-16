@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   valueInput: {
     width: 70,
     height: 50,
-    backgroundColor: '#ddd',
+    backgroundColor: '#F3F8FF',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

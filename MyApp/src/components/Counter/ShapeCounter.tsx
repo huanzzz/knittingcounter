@@ -1,22 +1,56 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableWithoutFeedback, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { ShapeCounter as ShapeCounterType } from './CounterTypes';
 import SemiCircleProgress from './SemiCircleProgress';
+import { ShapeCounterType } from './CounterTypes';
 
 interface ShapeCounterProps {
   counter: ShapeCounterType;
   onUpdate: (counter: ShapeCounterType) => void;
-  onEdit: () => void;
-  hideEdit?: boolean; // 新增：控制是否隐藏编辑按钮
+  onEdit?: () => void;
+  hideEdit?: boolean;
 }
 
 const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, hideEdit = false }) => {
+  const timesDecrementAnimation = useRef(new Animated.Value(0)).current;
+  const timesIncrementAnimation = useRef(new Animated.Value(0)).current;
+  const rowsDecrementAnimation = useRef(new Animated.Value(0)).current;
+  const rowsIncrementAnimation = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = (animation: Animated.Value) => {
+    Animated.spring(animation, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = (animation: Animated.Value) => {
+    Animated.spring(animation, {
+      toValue: 0,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const getAnimatedStyle = (animation: Animated.Value) => ({
+    transform: [
+      {
+        scale: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 0.80],
+        }),
+      },
+    ],
+  });
+
   const handleTimesIncrement = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
-      currentTimes: counter.currentTimes + 1,
+      currentTimes: Math.min(counter.maxTimes, counter.currentTimes + 1),
     });
   };
 
@@ -24,58 +58,24 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({
       ...counter,
-      currentTimes: Math.max(1, counter.currentTimes - 1), // 最小值为1
+      currentTimes: Math.max(1, counter.currentTimes - 1),
     });
   };
 
   const handleRowsIncrement = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (counter.isLinked) {
-      // 连接模式：当rows达到最大值时，times自动+1，rows重置为1
-      if (counter.currentRows + 1 > counter.maxRows) {
-        onUpdate({
-          ...counter,
-          currentTimes: counter.currentTimes + 1,
-          currentRows: 1,
-        });
-      } else {
-        onUpdate({
-          ...counter,
-          currentRows: counter.currentRows + 1,
-        });
-      }
-    } else {
-      // 独立模式：rows和times互不影响
-      onUpdate({
-        ...counter,
-        currentRows: counter.currentRows + 1,
-      });
-    }
+    onUpdate({
+      ...counter,
+      currentRows: Math.min(counter.maxRows, counter.currentRows + 1),
+    });
   };
 
   const handleRowsDecrement = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (counter.isLinked) {
-      // 连接模式：当rows为1且times>1时，times-1，rows设为最大值
-      if (counter.currentRows === 1 && counter.currentTimes > 1) {
-        onUpdate({
-          ...counter,
-          currentTimes: counter.currentTimes - 1,
-          currentRows: counter.maxRows,
-        });
-      } else {
-        onUpdate({
-          ...counter,
-          currentRows: Math.max(1, counter.currentRows - 1), // 最小值为1
-        });
-      }
-    } else {
-      // 独立模式：rows和times互不影响
-      onUpdate({
-        ...counter,
-        currentRows: Math.max(1, counter.currentRows - 1), // 最小值为1
-      });
-    }
+    onUpdate({
+      ...counter,
+      currentRows: Math.max(1, counter.currentRows - 1),
+    });
   };
 
   return (
@@ -83,9 +83,9 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
       <View style={styles.header}>
         <Text style={styles.name}>{counter.name || 'shape counter'}</Text>
         {!hideEdit && (
-          <TouchableOpacity onPress={onEdit} style={styles.editBtn}>
+          <TouchableWithoutFeedback onPress={onEdit} style={styles.editBtn}>
             <Text style={styles.editText}>edit</Text>
-          </TouchableOpacity>
+          </TouchableWithoutFeedback>
         )}
       </View>
       
@@ -94,9 +94,15 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
         <View style={styles.counterGroup}>
           <View style={styles.content}>
             {/* 左侧减号按钮 */}
-            <TouchableOpacity style={styles.button} onPress={handleTimesDecrement}>
-              <Text style={styles.buttonText}>−</Text>
-            </TouchableOpacity>
+            <TouchableWithoutFeedback 
+              onPressIn={() => handlePressIn(timesDecrementAnimation)}
+              onPressOut={() => handlePressOut(timesDecrementAnimation)}
+              onPress={handleTimesDecrement}
+            >
+              <Animated.View style={[styles.button, getAnimatedStyle(timesDecrementAnimation)]}>
+                <Text style={styles.buttonText}>−</Text>
+              </Animated.View>
+            </TouchableWithoutFeedback>
             
             {/* 中间半圆进度条 */}
             <View style={styles.progressContainer}>
@@ -109,9 +115,15 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
             </View>
             
             {/* 右侧加号按钮 */}
-            <TouchableOpacity style={styles.button} onPress={handleTimesIncrement}>
-              <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
+            <TouchableWithoutFeedback 
+              onPressIn={() => handlePressIn(timesIncrementAnimation)}
+              onPressOut={() => handlePressOut(timesIncrementAnimation)}
+              onPress={handleTimesIncrement}
+            >
+              <Animated.View style={[styles.button, getAnimatedStyle(timesIncrementAnimation)]}>
+                <Text style={styles.buttonText}>+</Text>
+              </Animated.View>
+            </TouchableWithoutFeedback>
           </View>
           {/* 标签移到半圆下方 */}
           <Text style={styles.label}>times</Text>
@@ -121,9 +133,15 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
         <View style={styles.counterGroup}>
           <View style={styles.content}>
             {/* 左侧减号按钮 */}
-            <TouchableOpacity style={styles.button} onPress={handleRowsDecrement}>
-              <Text style={styles.buttonText}>−</Text>
-            </TouchableOpacity>
+            <TouchableWithoutFeedback 
+              onPressIn={() => handlePressIn(rowsDecrementAnimation)}
+              onPressOut={() => handlePressOut(rowsDecrementAnimation)}
+              onPress={handleRowsDecrement}
+            >
+              <Animated.View style={[styles.button, getAnimatedStyle(rowsDecrementAnimation)]}>
+                <Text style={styles.buttonText}>−</Text>
+              </Animated.View>
+            </TouchableWithoutFeedback>
             
             {/* 中间半圆进度条 */}
             <View style={styles.progressContainer}>
@@ -136,9 +154,15 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
             </View>
             
             {/* 右侧加号按钮 */}
-            <TouchableOpacity style={styles.button} onPress={handleRowsIncrement}>
-              <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
+            <TouchableWithoutFeedback 
+              onPressIn={() => handlePressIn(rowsIncrementAnimation)}
+              onPressOut={() => handlePressOut(rowsIncrementAnimation)}
+              onPress={handleRowsIncrement}
+            >
+              <Animated.View style={[styles.button, getAnimatedStyle(rowsIncrementAnimation)]}>
+                <Text style={styles.buttonText}>+</Text>
+              </Animated.View>
+            </TouchableWithoutFeedback>
           </View>
           {/* 标签移到半圆下方 */}
           <Text style={styles.label}>rows</Text>
@@ -150,7 +174,7 @@ const ShapeCounter: React.FC<ShapeCounterProps> = ({ counter, onUpdate, onEdit, 
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ddd',
+    backgroundColor: 'transparent',
     borderRadius: 12,
     padding: 13,
     marginBottom: 12,
@@ -163,8 +187,8 @@ const styles = StyleSheet.create({
     marginBottom: 8, // 从0增加到8，增加和下方内容的距离
   },
   name: {
-    fontSize: 16,
-    color: '#222',
+    fontSize: 14,
+    color: '#5D5D5D',
     fontWeight: '500',
   },
   editBtn: {

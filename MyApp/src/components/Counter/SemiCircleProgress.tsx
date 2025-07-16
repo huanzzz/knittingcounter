@@ -56,7 +56,7 @@ const SemiCircleProgress: React.FC<SemiCircleProgressProps> = ({
         {/* 背景半圆 - 完整的灰色弧线 */}
         <Path
           d={semicirclePath}
-          stroke="#ccc"
+          stroke="#F3EEE2"
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -65,7 +65,7 @@ const SemiCircleProgress: React.FC<SemiCircleProgressProps> = ({
         {/* 进度半圆 - 使用虚线控制显示长度 */}
         <Path
           d={semicirclePath}
-          stroke="#333"
+          stroke="#6E3A15"
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -111,13 +111,13 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     position: 'absolute',
-    top: '45%',
+    top: '35%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   centerText: {
-    fontSize: 32, // 从24增加到28
-    color: '#222',
+    fontSize: 34, // 从24增加到28
+    color: '#6E3A15',
     fontWeight: '400',
   },
   valuesContainer: {

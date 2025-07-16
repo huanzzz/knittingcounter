@@ -4,6 +4,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { Pattern } from '../types/Pattern';
 import { PatternStorage } from '../utils/PatternStorage';
+import { Button } from '../components/design-system';
 
 type RootStackParamList = {
   Home: undefined;
@@ -174,15 +175,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         renderItem={renderPattern}
       />
       <View style={styles.addPatternBar}>
-        <TouchableOpacity 
-          style={styles.addPatternBtn} 
-          onPress={() => navigation.navigate('AddPattern')}
-        >
-          <Text style={styles.addPatternText}>new pattern</Text>
-          <View style={styles.addIcon}>
-            <Text style={{fontSize:24}}>＋</Text>
+        <View style={styles.addPatternBtnContainer}>
+          <Button 
+            variant="primary"
+            size="large"
+            title=""
+            onPress={() => navigation.navigate('AddPattern')}
+            style={[styles.addPatternBtn, { paddingRight: 56 }]}
+          />
+          <View style={[styles.addIconContainer, { right: 32 }]}>
+            <Text style={[styles.addPatternText]}>new pattern</Text>
+            <View style={styles.addIcon}>
+              <Text style={styles.addIconText}>＋</Text>
+            </View>
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -259,14 +266,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
   },
   menuButton: {
     width: '100%',
     paddingVertical: 12,
     marginVertical: 4,
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
   },
   menuButtonText: {
@@ -282,37 +289,52 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 24,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 3,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
     elevation: 4,
   },
+  addPatternBtnContainer: {
+    position: 'relative',
+    width: '100%',
+  },
   addPatternBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    width: '100%',
   },
   addPatternText: {
-    fontSize: 18,
-    color: '#222',
-    marginRight: 8,
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  addIconContainer: {
+    position: 'absolute',
+    right: 16,
+    top: -4,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   addIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#222',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
+    marginLeft: 8,
+  },
+  addIconText: {
+    fontSize: 16,
+    color: '#fff',
+    lineHeight: 16,
   },
 });
 

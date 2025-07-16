@@ -265,25 +265,41 @@ const SwipeableCounter: React.FC<SwipeableCounterProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: 12,
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 3,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   contentWrapper: {
     position: 'relative',
     overflow: 'hidden',
     borderRadius: 12,
-    backgroundColor: '#ddd',
+    backgroundColor: '#FFF9EE',
     flexDirection: 'row',
+    shadowColor: '#6E3A15',
+    shadowOffset: {
+      width: 3,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   dragHandle: {
     width: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderRightWidth: 1,
-    borderRightColor: '#ccc',
+    borderRightColor: '#E5D9C6',
   },
   counterContainer: {
     flex: 1,
     zIndex: 2,
-    backgroundColor: '#ddd',
+    backgroundColor: '#FFF9EE',
   },
   actionsContainer: {
     position: 'absolute',
