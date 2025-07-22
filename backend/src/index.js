@@ -67,6 +67,7 @@ app.get('/api/images/:filename', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
-}); 
+const HOST = process.env.HOST || "0.0.0.0";
+app.listen(PORT, HOST, () => {
+  console.log(`服务器运行在 http://${HOST}:${PORT}`);
+});
