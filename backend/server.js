@@ -1,8 +1,9 @@
-const express = require('express');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const cors = require('cors');
-const puppeteer = require('puppeteer');
+import express from 'express';
+import axios from 'axios';
+import { load } from 'cheerio';
+import cors from 'cors';
+import puppeteer from 'puppeteer';
+
 
 const app = express();
 app.use(express.json());
@@ -50,7 +51,7 @@ async function fetchImagesBasic(url) {
     });
     
     const html = response.data;
-    const $ = cheerio.load(html);
+    const $ = load(html);
     
     let images = [];
     
@@ -207,8 +208,9 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const HOST = process.env.HOST || "0.0.0.0";
+app.listen(PORT, HOST, () => {
   console.log(`🚀 XHS Image API server running on port ${PORT}`);
-  console.log(`📝 Test endpoint: http://localhost:${PORT}/api/test`);
-  console.log(`🔍 Images endpoint: POST http://localhost:${PORT}/api/xhs/images`);
-}); 
+  console.log(`📝 Test endpoint: http://${HOST}:${PORT}/api/test`);
+  console.log(`🔍 Images endpoint: POST http://${HOST}:${PORT}/api/xhs/images`);
+});

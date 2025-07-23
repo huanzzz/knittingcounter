@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  knittingcounter-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./output:/app/output
+      - ./uploads:/app/uploads
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - XHS_PORT=3001
