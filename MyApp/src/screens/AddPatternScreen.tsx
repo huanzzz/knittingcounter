@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Button, Input } from '../components/design-system';
+import Config from 'react-native-config';
 
 type RootStackParamList = {
   AddPattern: undefined;
@@ -20,6 +21,8 @@ type Props = {
 };
 
 const { width: screenWidth } = Dimensions.get('window');
+
+const API_HOST = Config.API_HOST || 'http://localhost';
 
 const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
   const [linkUrl, setLinkUrl] = useState('');
@@ -42,7 +45,9 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://192.168.1.152:3001/api/xhs/images', {
+      const url = `${API_HOST}:3001/api/xhs/images`
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +153,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
       } as any);
 
       // 调用后端API转换PDF
-      const response = await fetch('http://192.168.1.152:3000/api/convert-pdf', {
+      const response = await fetch(`${API_HOST}:3000/api/convert-pdf`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -165,7 +170,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
       if (data.images && data.images.length > 0) {
         // 将后端返回的图片路径转换为完整URL
         const imageUrls = data.images.map((img: any) => 
-          `http://192.168.1.152:3000/api/images/${img.path.split('/').pop()}`
+          `${API_HOST}:3000/api/images/${img.path.split('/').pop()}`
         );
         setExtractedImages(imageUrls);
         setShowImages(true);

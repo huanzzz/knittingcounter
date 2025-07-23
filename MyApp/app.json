@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MyApp",
-    "slug": "MyApp",
+    "name": "Knitting Counter",
+    "slug": "knitting-counter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -13,7 +13,20 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.myapp.knittingcounter"
+      "buildNumber": "1",
+      "bundleIdentifier": "com.alldaysunday.knittingcounter",
+      "infoPlist": {
+        "CFBundleDisplayName": "Knitting Counter",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "knitting.allday-sunday.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        }
+
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +34,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.myapp.knittingcounter"
+      "package": "com.alldaysunday.knittingcounter"
     },
     "web": {
       "favicon": "./assets/logo.png"
