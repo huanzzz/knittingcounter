@@ -289,7 +289,7 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleCounterAdd = (newCounter: Counter) => {
-    setCounters(prev => [...prev, newCounter]);
+    setCounters(prev => [newCounter, ...prev]);
   };
 
   const handleCounterDelete = (id: string) => {
