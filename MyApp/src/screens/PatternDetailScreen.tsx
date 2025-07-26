@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   GestureHandlerRootView, 
   PinchGestureHandler, 
@@ -68,6 +69,8 @@ type SwipeContext = {
 
 const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { id, images, projectName, needleSize } = route.params;
+  
+  // 移除调试日志
   const [activeTab, setActiveTab] = useState<TabType>('pattern');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [counterPanelState, setCounterPanelState] = useState<CounterPanelState>('partial');
@@ -79,6 +82,49 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const translateY = useSharedValue(0);
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
+
+  // 添加保存图片索引的函数
+  const saveLastViewedIndex = async (index: number) => {
+    try {
+      await AsyncStorage.setItem(`lastViewedIndex:${id}`, index.toString());
+    } catch (error) {
+      // 保留错误日志，这对生产环境的错误排查很重要
+      console.error('保存最后查看的图片索引失败:', error);
+    }
+  };
+
+  // 加载上次查看的图片索引
+  useEffect(() => {
+    const loadLastViewedIndex = async () => {
+      try {
+        const savedIndex = await AsyncStorage.getItem(`lastViewedIndex:${id}`);
+        if (savedIndex !== null) {
+          const index = parseInt(savedIndex, 10);
+          // 确保索引在有效范围内
+          if (index >= 0 && index < images.length) {
+            setCurrentImageIndex(index);
+          }
+        }
+      } catch (error) {
+        // 保留错误日志
+        console.error('加载最后查看的图片索引失败:', error);
+      }
+    };
+
+    loadLastViewedIndex();
+  }, [id, images.length]);
+
+  // 当图片索引改变时保存
+  useEffect(() => {
+    saveLastViewedIndex(currentImageIndex);
+  }, [currentImageIndex, id]);
+
+  // 在组件卸载时保存当前索引
+  useEffect(() => {
+    return () => {
+      saveLastViewedIndex(currentImageIndex);
+    };
+  }, [currentImageIndex, id]);
 
   // 缩放手势处理
   const pinchHandler = useAnimatedGestureHandler<GestureEvent<PinchGestureHandlerEventPayload>, PinchContext>({
@@ -171,6 +217,13 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     saveCounters();
   }, [counters]);
 
+  // 添加图片相关的调试
+  useEffect(() => {
+    // console.log('图片数组:', images);
+    // console.log('当前图片索引:', currentImageIndex);
+    // console.log('当前图片 URI:', images[currentImageIndex]);
+  }, [images, currentImageIndex]);
+
   const loadCounters = async () => {
     try {
       const savedCounters = await CounterDB.getCounters(id);
@@ -204,28 +257,28 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  // 滑动切换图片手势处理
-  const swipeHandler = useAnimatedGestureHandler<GestureEvent<PanGestureHandlerEventPayload>, SwipeContext>({
-    onStart: (_, context) => {
-      context.startX = translateX.value;
-    },
-    onActive: (event, context) => {
-      if (scale.value <= 1) {
-        translateX.value = context.startX + event.translationX;
-      }
-    },
-    onEnd: (event) => {
-      if (scale.value <= 1) {
-        const swipeThreshold = 50;
-        if (event.translationX > swipeThreshold && currentImageIndex > 0) {
-          runOnJS(setCurrentImageIndex)(currentImageIndex - 1);
-        } else if (event.translationX < -swipeThreshold && currentImageIndex < images.length - 1) {
-          runOnJS(setCurrentImageIndex)(currentImageIndex + 1);
-        }
-        translateX.value = withSpring(0);
-      }
-    },
-  });
+  // 添加切换图片的函数
+  const handlePrevImage = () => {
+    // console.log('点击上一张按钮');
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+      // 重置缩放和位置
+      scale.value = withSpring(1);
+      translateX.value = withSpring(0);
+      translateY.value = withSpring(0);
+    }
+  };
+
+  const handleNextImage = () => {
+    // console.log('点击下一张按钮');
+    if (currentImageIndex < images.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+      // 重置缩放和位置
+      scale.value = withSpring(1);
+      translateX.value = withSpring(0);
+      translateY.value = withSpring(0);
+    }
+  };
 
   const handleCounterUpdate = (updatedCounter: Counter) => {
     setCounters(prev => 
@@ -270,42 +323,60 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={styles.pageText}>{currentImageIndex + 1}/{images.length}</Text>
             </View>
             
-            {/* 图片轮播 */}
-            <GestureHandlerRootView style={styles.imageContainer}>
-              <PanGestureHandler onGestureEvent={swipeHandler}>
-                <Animated.View style={styles.imageContainer}>
-                  <PanGestureHandler onGestureEvent={panHandler}>
-                    <Animated.View style={styles.imageContainer}>
-                      <PinchGestureHandler onGestureEvent={pinchHandler}>
-                        <Animated.Image 
-                          source={{ uri: images[currentImageIndex] }} 
-                          style={[styles.patternImage, animatedImageStyle]}
-                          resizeMode="contain"
-                        />
-                      </PinchGestureHandler>
-                    </Animated.View>
-                  </PanGestureHandler>
-                </Animated.View>
-              </PanGestureHandler>
-            </GestureHandlerRootView>
+            {/* 图片区域和导航按钮的容器 */}
+            <View style={styles.contentContainer}>
+              {/* 图片区域 */}
+              <GestureHandlerRootView style={styles.imageWrapper}>
+                <PanGestureHandler onGestureEvent={panHandler}>
+                  <Animated.View style={styles.imageWrapper}>
+                    <PinchGestureHandler onGestureEvent={pinchHandler}>
+                      <Animated.Image 
+                        source={{ uri: images[currentImageIndex] }} 
+                        style={[styles.patternImage, animatedImageStyle]}
+                        resizeMode="contain"
+                      />
+                    </PinchGestureHandler>
+                  </Animated.View>
+                </PanGestureHandler>
+              </GestureHandlerRootView>
+
+              {/* 导航按钮 */}
+              <View style={styles.navigationButtons}>
+                <TouchableOpacity 
+                  style={[styles.navButton, currentImageIndex === 0 && styles.navButtonDisabled]}
+                  onPress={handlePrevImage}
+                  disabled={currentImageIndex === 0}
+                >
+                  <Text style={styles.navButtonText}>←</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.navButton, currentImageIndex === images.length - 1 && styles.navButtonDisabled]}
+                  onPress={handleNextImage}
+                  disabled={currentImageIndex === images.length - 1}
+                >
+                  <Text style={styles.navButtonText}>→</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         );
       
       case 'pics':
-        return (
-          <PicsContent patternId={id} />
-        );
+        // console.log('渲染 pics tab');
+        return <PicsContent patternId={id} />;
       
       case 'note':
-        return (
-          <NotesScreen patternId={id} />
-        );
+        // console.log('渲染 note tab');
+        return <NotesScreen patternId={id} />;
       
       default:
+        // console.log('渲染 default case');
         return null;
     }
   };
 
+  // console.log('准备渲染主组件');
+  
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -313,13 +384,11 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <View style={styles.innerContainer}>
-        {/* 顶部导航 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
             <Text style={styles.closeIcon}>×</Text>
           </TouchableOpacity>
           
-          {/* 标签导航 */}
           <View style={styles.tabContainer}>
             <TouchableOpacity 
               style={[styles.tab, activeTab === 'pattern' && styles.activeTab]}
@@ -350,12 +419,10 @@ const PatternDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* 内容区域 */}
         <View style={styles.content}>
           {renderTabContent()}
         </View>
 
-        {/* 计数器面板 */}
         <CounterPanel
           counters={counters}
           panelState={counterPanelState}
@@ -377,6 +444,7 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -384,7 +452,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 16,
     paddingBottom: 16,
-    height: HEADER_HEIGHT, // 确保总高度不变
+    height: HEADER_HEIGHT,
+    backgroundColor: '#fff',
   },
   backBtn: {
     marginRight: 16,
@@ -428,9 +497,20 @@ const styles = StyleSheet.create({
   },
   content: {
     height: CONTENT_HEIGHT,
+    backgroundColor: '#fff',
   },
   patternContent: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  contentContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  imageWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
   pageIndicator: {
@@ -447,12 +527,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
   },
   patternImage: {
     width: screenWidth,
@@ -478,6 +552,58 @@ const styles = StyleSheet.create({
   addNoteText: {
     fontSize: 16,
     color: '#666',
+  },
+  navigationButtons: {
+    position: 'absolute',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    left: 0,
+    right: 0,
+    top: '50%',
+    paddingHorizontal: 16,
+    transform: [{ translateY: -25 }],
+  },
+  navButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonDisabled: {
+    opacity: 0.3,
+  },
+  navButtonText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  debugContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 5,
+    zIndex: 999,
+  },
+  debugHeader: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 5,
+  },
+  debugText: {
+    color: '#fff',
+    fontSize: 12,
   },
 });
 
