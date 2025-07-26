@@ -128,7 +128,7 @@ export const PatternDB = {
   getAllPatterns: async (): Promise<Pattern[]> => {
     console.log('Getting all patterns');
     const result = await db.getAllAsync<any>(
-      `SELECT p.*, GROUP_CONCAT(pi.image_uri) as images
+      `SELECT p.*, GROUP_CONCAT(pi.image_uri ORDER BY pi.sort_order) as images
        FROM patterns p
        LEFT JOIN pattern_images pi ON p.id = pi.pattern_id
        GROUP BY p.id
@@ -150,7 +150,7 @@ export const PatternDB = {
   // 获取单个Pattern
   getPattern: async (id: string): Promise<Pattern> => {
     const row = await db.getFirstAsync<any>(
-      `SELECT p.*, GROUP_CONCAT(pi.image_uri) as images
+      `SELECT p.*, GROUP_CONCAT(pi.image_uri ORDER BY pi.sort_order) as images
        FROM patterns p
        LEFT JOIN pattern_images pi ON p.id = pi.pattern_id
        WHERE p.id = ?

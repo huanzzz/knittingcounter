@@ -190,19 +190,22 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
   const moveImage = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex || toIndex < 0 || toIndex >= extractedImages.length) return;
     
-    const newImages = [...extractedImages];
-    const [movedImage] = newImages.splice(fromIndex, 1);
-    newImages.splice(toIndex, 0, movedImage);
-    setExtractedImages(newImages);
-    
-    // 更新选中索引
-    if (selectedImageIndex === fromIndex) {
-      setSelectedImageIndex(toIndex);
-    } else if (selectedImageIndex > fromIndex && selectedImageIndex <= toIndex) {
-      setSelectedImageIndex(selectedImageIndex - 1);
-    } else if (selectedImageIndex < fromIndex && selectedImageIndex >= toIndex) {
-      setSelectedImageIndex(selectedImageIndex + 1);
-    }
+    setExtractedImages(prev => {
+      const newImages = [...prev];
+      const [movedImage] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, movedImage);
+      
+      // 更新选中索引
+      if (selectedImageIndex === fromIndex) {
+        setSelectedImageIndex(toIndex);
+      } else if (selectedImageIndex > fromIndex && selectedImageIndex <= toIndex) {
+        setSelectedImageIndex(selectedImageIndex - 1);
+      } else if (selectedImageIndex < fromIndex && selectedImageIndex >= toIndex) {
+        setSelectedImageIndex(selectedImageIndex + 1);
+      }
+
+      return newImages;
+    });
   };
 
   const DraggableThumbnail = ({ imageUrl, index, isSelected, onPress, onMove }: {
@@ -367,7 +370,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
     
-    // 跳转到编辑pattern名称页面
+    // 跳转到编辑pattern名称页面，传递排序后的图片数组
     navigation.navigate('EditPatternName', { images: extractedImages });
   };
 

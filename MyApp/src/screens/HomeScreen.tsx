@@ -183,12 +183,15 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.navigate('AddPattern')}
             style={[styles.addPatternBtn, { paddingRight: 56 }]}
           />
-          <View style={[styles.addIconContainer, { right: 32 }]}>
+          <TouchableOpacity 
+            style={[styles.addIconContainer, { right: 32 }]}
+            onPress={() => navigation.navigate('AddPattern')}
+          >
             <Text style={[styles.addPatternText]}>new pattern</Text>
             <View style={styles.addIcon}>
               <Text style={styles.addIconText}>＋</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
