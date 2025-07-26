@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, Dimensions, PanResponder, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, Dimensions, PanResponder, TouchableWithoutFeedback, Keyboard, Animated } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -213,77 +213,141 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
     onMove: (fromIndex: number, toIndex: number) => void;
   }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+    const dragPosition = useRef(new Animated.Value(0)).current;
+    const scale = useRef(new Animated.Value(1)).current;
+    const isDraggingRef = useRef(false);
+    const lastMoveX = useRef(0);
+    const hasMovedRef = useRef(false);
 
-    const panResponder = PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // 只有在长按且移动距离足够时才开始拖拽
-        return isDragging && (Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10);
-      },
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        // 如果正在拖拽，阻止其他手势（包括ScrollView）
-        return isDragging && (Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10);
-      },
-      
-      onPanResponderGrant: () => {
-        setDragPosition({ x: 0, y: 0 });
-        setScrollEnabled(false); // 开始拖拽时禁用ScrollView滚动
-      },
-      
-      onPanResponderMove: (evt, gestureState) => {
-        if (isDragging) {
-          setDragPosition({ x: gestureState.dx, y: gestureState.dy });
+    useEffect(() => {
+      isDraggingRef.current = isDragging;
+      // 添加拖拽时的缩放动画
+      Animated.spring(scale, {
+        toValue: isDragging ? 1.1 : 1,
+        useNativeDriver: true,
+        tension: 40,
+        friction: 5
+      }).start();
+    }, [isDragging]);
+
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => isDraggingRef.current,
+        onStartShouldSetPanResponderCapture: () => isDraggingRef.current,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (!isDraggingRef.current) return false;
+          const { dx, dy } = gestureState;
+          const shouldRespond = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 2;
+          return shouldRespond;
+        },
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+          if (!isDraggingRef.current) return false;
+          const { dx, dy } = gestureState;
+          return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 2;
+        },
+
+        onPanResponderGrant: (_, gestureState) => {
+          lastMoveX.current = gestureState.moveX;
+          hasMovedRef.current = false;
+          dragPosition.setValue(0);
+        },
+
+        onPanResponderMove: (_, gestureState) => {
+          if (!isDraggingRef.current) return;
           
-          // 计算目标位置
-          const itemWidth = 92; // 80 + 12 margin
-          const newIndex = Math.round(index + gestureState.dx / itemWidth);
-          const clampedIndex = Math.max(0, Math.min(extractedImages.length - 1, newIndex));
+          const dx = gestureState.dx;
+          dragPosition.setValue(dx);
           
-          if (clampedIndex !== index && Math.abs(gestureState.dx) > itemWidth / 2) {
-            onMove(index, clampedIndex);
+          const itemWidth = 92;
+          if (Math.abs(dx) > itemWidth / 2) {
+            const targetIndex = index + (dx > 0 ? 1 : -1);
+            if (targetIndex >= 0 && targetIndex < extractedImages.length) {
+              onMove(index, targetIndex);
+              lastMoveX.current = gestureState.moveX;
+              // 平滑重置位置
+              Animated.spring(dragPosition, {
+                toValue: 0,
+                useNativeDriver: true,
+                tension: 50,
+                friction: 6
+              }).start();
+            }
           }
-        }
-      },
-      
-      onPanResponderRelease: () => {
-        setIsDragging(false);
-        setDragPosition({ x: 0, y: 0 });
-        setScrollEnabled(true); // 拖拽结束后重新启用ScrollView滚动
-      },
-      
-      onPanResponderTerminate: () => {
-        // 如果手势被中断，也要重置状态
-        setIsDragging(false);
-        setDragPosition({ x: 0, y: 0 });
-        setScrollEnabled(true);
-      },
-    });
+        },
+
+        onPanResponderRelease: () => {
+          // 平滑重置位置和状态
+          Animated.parallel([
+            Animated.spring(dragPosition, {
+              toValue: 0,
+              useNativeDriver: true,
+              tension: 50,
+              friction: 6
+            }),
+            Animated.spring(scale, {
+              toValue: 1,
+              useNativeDriver: true,
+              tension: 40,
+              friction: 5
+            })
+          ]).start(() => {
+            setIsDragging(false);
+            hasMovedRef.current = false;
+          });
+        },
+
+        onPanResponderTerminate: () => {
+          // 平滑重置位置和状态
+          Animated.parallel([
+            Animated.spring(dragPosition, {
+              toValue: 0,
+              useNativeDriver: true,
+              tension: 50,
+              friction: 6
+            }),
+            Animated.spring(scale, {
+              toValue: 1,
+              useNativeDriver: true,
+              tension: 40,
+              friction: 5
+            })
+          ]).start(() => {
+            setIsDragging(false);
+            hasMovedRef.current = false;
+          });
+        },
+
+        onPanResponderTerminationRequest: () => false,
+      })
+    ).current;
 
     const handleLongPress = () => {
       setIsDragging(true);
-      // 长按时就禁用滚动，确保后续的拖拽手势能正常工作
-      setScrollEnabled(false);
+      isDraggingRef.current = true;
+      hasMovedRef.current = false;
     };
 
     return (
-      <View 
+      <Animated.View 
         style={[
           styles.thumbnailWrapper,
           isDragging && styles.draggingThumbnail,
-          { transform: [{ translateX: dragPosition.x }, { translateY: dragPosition.y }] }
+          {
+            transform: [
+              { translateX: dragPosition },
+              { scale: scale }
+            ],
+            zIndex: isDragging ? 999 : 1
+          }
         ]}
         {...panResponder.panHandlers}
       >
         <TouchableOpacity
-          style={[
-            styles.thumbnail,
-            isSelected && styles.selectedThumbnail
-          ]}
+          style={[styles.thumbnail, isSelected && styles.selectedThumbnail]}
           onPress={onPress}
           onLongPress={handleLongPress}
-          delayLongPress={500} // 增加长按延迟，避免误触
+          delayLongPress={500}
+          activeOpacity={0.7}
         >
           <Image source={{ uri: imageUrl }} style={styles.thumbnailImage} />
         </TouchableOpacity>
@@ -293,7 +357,7 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
         >
           <Text style={styles.deleteIcon}>×</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -339,7 +403,9 @@ const AddPatternScreen: React.FC<Props> = ({ navigation }) => {
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.thumbnailList}
-            scrollEnabled={scrollEnabled}
+            scrollEnabled={true}
+            alwaysBounceHorizontal={true}
+            decelerationRate="normal"
           >
             {extractedImages.map((imageUrl, index) => (
               <DraggableThumbnail
@@ -517,6 +583,8 @@ const styles = StyleSheet.create({
   thumbnailList: {
     paddingHorizontal: 4,
     paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   thumbnailWrapper: {
     marginRight: 12,
